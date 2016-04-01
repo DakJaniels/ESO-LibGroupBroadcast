@@ -1,0 +1,3 @@
+title: LibGroupSocket
+version: r1
+compatiblity: 2.3

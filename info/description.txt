@@ -1,0 +1,151 @@
+[SIZE="5"]For Players[/SIZE]
+In order to follow ZOS' opt out policy (brought up in regards to Group Damage), LibGroupSocket gives you fine grained control over what data you share with your group. Per default it automatically disables the sending of all data when you leave a group, or quit the game.
+You can download and install LibGroupSocket like any other addon, in order to enable saving settings for it.
+
+[SIZE="5"]For Developers[/SIZE]
+LibGroupSocket offers a standardized way to share data with group members via map pings. It allows the sending of up to 3 byte of data in one ping or 7 bytes in 2 pings at a time. 
+Because the channel is very limited, there is currently only a maximum of 31 different message types supported.
+If you are interested in adding a new message type, please contact me via pm and I will reserve an ID.
+It is also encouraged to reuse existing message types and expand on them instead of adding a new one that does the same thing, but slightly different.
+
+This first version of the library is mostly a trial to see how it will work in combination with the many other addons out there and also to see how ZOS will react and how much interest it generates with players.
+For future versions I am considering to split message handlers into separate libraries, so they can be updated independently.
+
+[SIZE="5"]Known Issues[/SIZE]
+[LIST]
+[*]The library is currently not compatible with FTC's DPS sharing feature and you and all group members will see wrong values in FTC while LibGroupSocket is active
+[*]User set group pings may cause incorrect data to show up in same rare cases
+[*]User set group pings are overwritten when data is transmitted
+[*]The compass may show the automatically set group pings
+[*]Users without LibGroupSocket will see random group pings pop up in Wrothgar or Coldharbour
+[*]Settings for LibGroupSocket won't be saved unless you use the stand alone version.
+[/LIST]
+
+[SIZE="5"]API Reference[/SIZE]
+
+[SIZE="4"]ReadBit[/SIZE]
+Reads a bit from the data stream and increments the index and bit index accordingly.
+[CODE][B]boolean[/B] isSet, [B]number[/B] nextIndex, [B]number[/B] nextBitIndex = lib:ReadBit([B]table[/B] data, [B]number[/B] index, [B]number[/B] bitIndex)[/CODE]
+data - an array of integers between 0 and 255
+index - the current position to read from
+bitIndex - the current bit inside the current byte (starts from 1)
+Returns the state of the bit, the next position in the data array and the next bitIndex.
+
+[SIZE="4"]WriteBit[/SIZE]
+Writes a bit to the data stream and increments the index and bit index accordingly.
+[CODE][B]number[/B] nextIndex, [B]number[/B] nextBitIndex = lib:WriteBit([B]table[/B] data, [B]number[/B] index, [B]number[/B] bitIndex, [B]boolean[/B] value)[/CODE]
+data - an array of integers between 0 and 255
+index - the current position to write to
+bitIndex - the current bit inside the current byte (starts from 1)
+value - the new state of the bit
+Returns the next position in the data array and the next bitIndex.
+
+[SIZE="4"]ReadChar[/SIZE]
+Reads a single byte from the data stream, converts it into a string character and increments the index accordingly.
+[CODE][B]string[/B] character, [B]number[/B] nextIndex = lib:ReadChar([B]table[/B] data, [B]number[/B] index)[/CODE]
+data - an array of integers between 0 and 255
+index - the current position to read from
+Returns the character and the next position in the data array.
+
+[SIZE="4"]WriteChar[/SIZE]
+Writes a single character to the data stream and increments the index accordingly.
+[CODE][B]number[/B] nextIndex = lib:WriteChar([B]table[/B] data, [B]number[/B] index, [B]string[/B] value[, [B]number[/B] charIndex])[/CODE]
+data - an array of integers between 0 and 255
+index - the current position to write to
+value - a single character or a string of characters
+charIndex - optional index of the character that should be written to the data stream. Defaults to the first character
+Returns the next position in the data array.
+
+[SIZE="4"]ReadUint8[/SIZE]
+Reads a single byte from the data stream and increments the index accordingly.
+[CODE][B]number[/B] value, [B]number[/B] nextIndex = lib:ReadUint8([B]table[/B] data, [B]number[/B] index)[/CODE]
+data - an array of integers between 0 and 255
+index - the current position to read from
+Returns the 8-bit unsigned integer and the next position in the data array.
+
+[SIZE="4"]WriteUint8[/SIZE]
+Writes an 8-bit unsigned integer to the data stream and increments the index accordingly. The value is clamped and floored to match the data type.
+[CODE][B]number[/B] nextIndex = lib:WriteUint8([B]table[/B] data, [B]number[/B] index, [B]string[/B] value)[/CODE]
+data - an array of integers between 0 and 255
+index - the current position to write to
+value - an 8-bit unsigned integer
+Returns the next position in the data array.
+
+[SIZE="4"]ReadUint16[/SIZE]
+Reads two byte from the data stream, converts them to one integer and increments the index accordingly.
+[CODE][B]number[/B] value, [B]number[/B] nextIndex = lib:ReadUint16([B]table[/B] data, [B]number[/B] index)[/CODE]
+data - an array of integers between 0 and 255
+index - the current position to read from
+Returns the 16-bit unsigned integer and the next position in the data array.
+
+[SIZE="4"]WriteUint16[/SIZE]
+Writes a 16-bit unsigned integer to the data stream and increments the index accordingly. The value is clamped and floored to match the data type.
+[CODE][B]number[/B] nextIndex = lib:WriteUint16([B]table[/B] data, [B]number[/B] index, [B]string[/B] value)[/CODE]
+data - an array of integers between 0 and 255
+index - the current position to write to
+value - a 16-bit unsigned integer
+Returns the next position in the data array.
+
+[SIZE="4"]EncodeData[/SIZE]
+Converts 4 bytes of data into coordinates for a map ping.
+[CODE][B]number[/B] x, [B]number[/B] y = lib:EncodeData([B]number[/B] b0, [B]number[/B] b1, [B]number[/B] b2, [B]number[/B] b3, [B]number[/B] stepSize)[/CODE]
+b0 to b3 - integers between 0 and 255
+Step size specifies the smallest possible increment for the coordinates on a map.
+Returns normalized x and y coordinates.
+
+[SIZE="4"]DecodeData[/SIZE]
+Converts normalized map ping coordinates into 4 bytes of data.
+[CODE][B]number[/B] b0, [B]number[/B] b1, [B]number[/B] b2, [B]number[/B] b3 = lib:DecodeData([B]number[/B] x, [B]number[/B] y, [B]number[/B] stepSize)[/CODE]
+Step size specifies the smallest possible increment for the coordinates on a map.
+Returns 4 integers between 0 and 255.
+
+[SIZE="4"]MessageType[/SIZE]
+MessageType is an enumeration of implemented message types.
+[B]lib.MESSAGE_TYPE_RESERVED[/B]: Reserved in case we ever have more than 31 message types. Can also be used for local tests.
+[B]lib.MESSAGE_TYPE_RESOURCES[/B]: For exchanging stamina and magicka values.
+
+[SIZE="4"]EncodeHeader[/SIZE]
+Packs a 5-bit messageType and a 3-bit length value into one byte of data.
+[CODE][B]number[/B] value = lib:EncodeHeader([B]MessageType[/B] messageType, [B]number[/B] length)[/CODE]
+messageType - integer between 0 and 31
+length - integer between 0 and 7
+Returns encoded header byte.
+
+[SIZE="4"]DecodeHeader[/SIZE]
+Unpacks a 5-bit messageType and a 3-bit length value from one byte of data.
+[CODE][B]MessageType[/B] messageType, [B]number[/B] length = lib:DecodeHeader([B]number[/B] value)[/CODE]
+value - integer between 0 and 255
+Returns messageType and length.
+
+[SIZE="4"]Send[/SIZE]
+Queues up to seven byte of data of the selected messageType for broadcasting to all group members.
+[CODE][B]boolean[/B] isValid = lib:Send([B]MessageType[/B] messageType, [B]table[/B] data)[/CODE]
+messageType - the protocol that is used for encoding the sent data
+data - up to 7 byte of custom data. if more than 3 bytes are passed, the data will take 2 map pins to arrive.
+Returns true if the data was successfully queued. Data won't be queued when the general sending setting is off or an invalid value was passed.
+
+[SIZE="4"]RegisterHandler[/SIZE]
+Registers a handler module for a specific data type.
+This module will keep everything related to data handling out of any single addon, in order to let multiple addons use the same messageType.
+[CODE][B]table[/B] handler, [B]table[/B] saveData = lib:RegisterHandler([B]MessageType[/B] messageType, [B]table[/B] data)[/CODE]
+messageType - The messageType the handler will take care of
+handlerVersion - The loaded handler version. Works like the minor version in LibStub and prevents older instances from overwriting a newer one
+Returns the handler object and saveData for the messageType.
+
+[SIZE="4"]GetHandler[/SIZE]
+Gives access to an already registered handler for addons.
+[CODE][B]table[/B] handler = lib:GetHandler([B]MessageType[/B] messageType)[/CODE]
+messageType - The messageType of the handler
+Returns the handler object.
+
+[SIZE="4"]RegisterCallback[/SIZE]
+Register for unprocessed data of a messageType.
+[CODE]lib:RegisterCallback([B]MessageType[/B] messageType, [B]function[/B] callback)[/CODE]
+
+[SIZE="4"]UnregisterCallback[/SIZE]
+Unregister for unprocessed data of a messageType.
+[CODE]lib:UnregisterCallback([B]MessageType[/B] messageType, [B]function[/B] callback)[/CODE]
+
+[SIZE="4"]/lgs[/SIZE]
+Gives access to the "enabled" setting via a chat command.
+[CODE]/lgs <1/0>[/CODE]
