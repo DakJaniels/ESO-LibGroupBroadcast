@@ -1,5 +1,5 @@
 local LIB_IDENTIFIER = "LibGroupSocket"
-local lib = LibStub:NewLibrary(LIB_IDENTIFIER, 999) -- only for test purposes. releases will get a smaller number
+local lib = LibStub:NewLibrary(LIB_IDENTIFIER, _LGS_VERSION_NUMBER or -1)
 
 if not lib then
 	return	-- already loaded and no upgrade necessary
@@ -62,16 +62,8 @@ local defaultData = {
 	handlers = {},
 }
 
-LibGroupSockets_Data = LibGroupSockets_Data or {}
-local saveData = LibGroupSockets_Data[GetDisplayName()] or ZO_DeepTableCopy(defaultData)
-LibGroupSockets_Data[GetDisplayName()] = saveData
-
-local function UpgradeSaveData()
---if(saveData.version == 1) then
---	saveData.setting = defaultData.setting
---	saveData.version = 2
---end
-end
+-- saved variables are not ready yet so we just use the defaults, the real saved variables will be loaded later in case the standalone lib is active
+local saveData = ZO_DeepTableCopy(defaultData)
 
 local function RefreshSettingsPanel()
 	if(not panel) then return end
@@ -154,6 +146,7 @@ local function InitializeSettingsPanel() -- TODO: localization
 			name = "LibGroupSocket",
 			author = "sirinsidiator",
 			version = "VERSION_NUMBER",
+			website = "http://www.esoui.com/downloads/info1337-LibGroupSocket.html",
 			registerForRefresh = true,
 			registerForDefaults = true
 		}
@@ -562,6 +555,7 @@ end)
 
 lib.MESSAGE_TYPE_RESERVED = 0 --- reserved in case we ever have more than 31 message types. can also be used for local tests
 lib.MESSAGE_TYPE_RESOURCES = 1 --- for exchanging stamina and magicka values
+lib.MESSAGE_TYPE_COMBATSTATS = 2 --- for combat stats like heal, damage and time in combat
 
 --- Registers a handler module for a specific data type.
 --- This module will keep everything related to data handling out of any single addon,
@@ -603,12 +597,12 @@ end
 
 local function Unload()
 	EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_PLAYER_ACTIVATED)
-	EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_UNIT_DESTROYED)
+    EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_UNIT_DESTROYED)
+    EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED)
+	SLASH_COMMANDS["/lgs"] = nil
 end
 
 local function Load()
-	UpgradeSaveData()
-
 	EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_UNIT_DESTROYED, function()
 		if(saveData.autoDisableOnGroupLeft and not IsUnitGrouped("player")) then
 			saveData.enabled = false
@@ -618,16 +612,36 @@ local function Load()
 		end
 	end)
 
-	-- don't initialize the settings menu before we can be sure that it is the newest version of the lib
-	EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_PLAYER_ACTIVATED, function()
-		EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_PLAYER_ACTIVATED)
-		if(saveData.autoDisableOnSessionStart) then
-			saveData.enabled = false -- don't need to refresh the settings or group menu here, because they are not initialized yet
-		end
+    -- saved variables only become available when EVENT_ADD_ON_LOADED is fired for the library
+    EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(_ ,addonName)
+        if(addonName == LIB_IDENTIFIER) then
+            LibGroupSocket_Data = LibGroupSocket_Data or {}
+            saveData = LibGroupSocket_Data[GetDisplayName()] or ZO_DeepTableCopy(defaultData)
+            LibGroupSocket_Data[GetDisplayName()] = saveData
 
-		InitializeSettingsPanel()
-		InitializeGroupMenu()
-	end)
+            --if(saveData.version == 1) then
+            --  saveData.setting = defaultData.setting
+            --  saveData.version = 2
+            --end
+
+            for messageType in pairs(handlers) do
+                saveData.handlers[messageType] = saveData.handlers[messageType] or {}
+            end
+
+            lib.cm:FireCallbacks("savedata-ready", saveData)
+        end
+    end)
+
+    -- don't initialize the settings menu before we can be sure that it is the newest version of the lib
+    EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_PLAYER_ACTIVATED, function(_, initial)
+        EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_PLAYER_ACTIVATED)
+        if(saveData.autoDisableOnSessionStart and initial) then
+            saveData.enabled = false -- don't need to refresh the settings or group menu here, because they are not initialized yet
+        end
+
+        InitializeSettingsPanel()
+        InitializeGroupMenu()
+    end)
 
 	SLASH_COMMANDS["/lgs"] = function(value)
 		saveData.enabled = (value == "1")

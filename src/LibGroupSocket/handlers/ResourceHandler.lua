@@ -236,13 +236,24 @@ local function Unload()
 	StopSending()
 end
 
+-- savedata becomes available twice in case the standalone lib is loaded
+local function InitializeSaveData(data)
+    saveData = data
+
+    if(not saveData.version) then
+        ZO_DeepTableCopy(defaultData, saveData)
+    end
+    
+    --  if(saveData.version == 1) then
+    --      -- update it
+    --  end
+end
+
 local function Load()
-	if(not saveData.version) then
-		ZO_DeepTableCopy(defaultData, saveData)
-	end
-	--	if(saveData.version == 1) then
-	--		-- update it
-	--	end
+    InitializeSaveData(saveData)
+    LGS.cm:RegisterCallback("savedata-ready", function(data) 
+        InitializeSaveData(data.handlers[type])
+    end)
 
 	handler.dataHandler = OnData
 	LGS.cm:RegisterCallback(type, OnData)
