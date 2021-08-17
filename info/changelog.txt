@@ -1,0 +1,4 @@
+version 1.3.0
+- switched to semantic versioning
+- updated dependencies to follow current standards
+- updated for Waking Flame

@@ -1,7 +1,9 @@
 ## Title: LibGroupSocket
 ## Author: sirinsidiator
-## Version: VERSION_NUMBER
-## APIVersion: 100017 100018
+## Version: @VERSION_NUMBER@
+## APIVersion: @API_VERSION@
+## AddOnVersion: @BUILD_NUMBER@
+## IsLibrary: true
 ## OptionalDependsOn: LibStub LibMapPing LibGPS LibAddonMenu-2.0
 ## SavedVariables: LibGroupSocket_Data
 ##
