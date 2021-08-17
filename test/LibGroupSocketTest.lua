@@ -1,4 +1,4 @@
-local LGS = LibStub("LibGroupSocket")
+local LGS = LibGroupSocket
 local LuaUnit = require('luaunit')
 local assertEquals = LuaUnit.assertEquals
 local assertTrue = LuaUnit.assertTrue
