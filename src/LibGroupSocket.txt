@@ -4,7 +4,7 @@
 ## APIVersion: @API_VERSION@
 ## AddOnVersion: @BUILD_NUMBER@
 ## IsLibrary: true
-## DependsOn: LibMapPing LibGPS LibAddonMenu-2.0
+## DependsOn: LibMapPing LibGPS LibAddonMenu-2.0 LibDebugLogger LibChatMessage
 ## OptionalDependsOn: LibStub
 ## SavedVariables: LibGroupSocket_Data
 

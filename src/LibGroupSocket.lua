@@ -19,8 +19,10 @@ lib.standalone = true
 local LMP = LibMapPing
 local LGPS = LibGPS2
 
+local logger = LibDebugLogger(LIB_IDENTIFIER)
+local chat = LibChatMessage(LIB_IDENTIFIER, "LGS")
 local function Log(message, ...)
-	df("[%s] %s", LIB_IDENTIFIER, message:format(...))
+    logger:Warn(message, ...)
 end
 lib.Log = Log
 
@@ -647,7 +649,7 @@ local function Load()
 
 	SLASH_COMMANDS["/lgs"] = function(value)
 		saveData.enabled = (value == "1")
-		Log("Data sending %s", saveData.enabled and "enabled" or "disabled")
+		chat:Printf("Data sending %s", saveData.enabled and "enabled" or "disabled")
 		RefreshSettingsPanel()
 		RefreshGroupMenuKeyboard()
 		RefreshGroupMenuGamepad()
