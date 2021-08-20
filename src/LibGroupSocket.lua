@@ -25,6 +25,7 @@ local function Log(message, ...)
     logger:Warn(message, ...)
 end
 lib.Log = Log
+lib.logger = logger
 
 --/script PingMap(89, 1, 1 / 2^16, 1 / 2^16) StartChatInput(table.concat({GetMapPlayerWaypoint()}, ","))
 -- smallest step is around 1.428571431461e-005 for Wrothgar, so there should be 70000 steps
@@ -486,6 +487,10 @@ function lib:Send(messageType, data)
 		lib.hasMore = true
 	end
 	return true
+end
+
+function lib:IsSendingEnabled()
+    return saveData.enabled
 end
 
 local function HandleDataPing(pingType, pingTag, x, y, isPingOwner)

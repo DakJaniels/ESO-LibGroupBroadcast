@@ -1,3 +1,7 @@
+-- LibGroupSocket & its files © sirinsidiator                   --
+-- Distributed under The Artistic License 2.0 (see LICENSE)     --
+------------------------------------------------------------------
+
 -- The Group Resource Protocol
 -- *bitArray* flags, *uint8* magicka percentage, *uint8* stamina percentage[, *uint16* magicka maximum, *uint16* stamina maximum]
 -- flags:
@@ -15,7 +19,7 @@ local SKIP_CREATE = true
 local ON_RESOURCES_CHANGED = "OnResourcesChanged"
 local MIN_SEND_TIMEOUT = 2
 local MIN_COMBAT_SEND_TIMEOUT = 1
-local Log = LGS.Log
+local logger = LGS.logger:Create("ResourceHandler")
 
 handler.resources = {}
 local resources = handler.resources
@@ -58,14 +62,14 @@ local function OnData(unitTag, data, isSelf)
     local largeMagickaPool, index, bitIndex = LGS:ReadBit(data, index, bitIndex)
     local largeStaminaPool, index, bitIndex = LGS:ReadBit(data, index, bitIndex)
     local hasMoreStamina, index, bitIndex = LGS:ReadBit(data, index, bitIndex)
-    --	Log("OnData %s (%d byte): is full: %s, needs full: %s, percent only: %s", GetUnitName(unitTag), #data, tostring(isFullUpdate), tostring(requestsFullUpdate), tostring(sharesPercentagesOnly))
+    logger:Verbose("OnData %s (%d byte): is full: %s, needs full: %s, percent only: %s", GetUnitName(unitTag), #data, tostring(isFullUpdate), tostring(requestsFullUpdate), tostring(sharesPercentagesOnly))
     index = index + 1
     if(not isSelf and requestsFullUpdate) then
         sendFullUpdate = true
     end
 
     local expectedLength = isFullUpdate and 7 or 3
-    if(#data < expectedLength) then Log("ResourceHandler received only %d of %d byte", #data, expectedLength) return end
+    if(#data < expectedLength) then logger:Warn("ResourceHandler received only %d of %d byte", #data, expectedLength) return end
 
     local unitResources = GetCachedUnitResources(unitTag)
     local magicka = unitResources[POWERTYPE_MAGICKA]
@@ -100,7 +104,7 @@ local function OnData(unitTag, data, isSelf)
 
     unitResources.lastUpdate = GetTimeStamp()
 
-    --	Log("magicka: %d/%d stamina: %d/%d", magicka.current, magicka.maximum, stamina.current, stamina.maximum)
+    logger:Verbose("magicka: %d/%d stamina: %d/%d", magicka.current, magicka.maximum, stamina.current, stamina.maximum)
     LGS.cm:FireCallbacks(ON_RESOURCES_CHANGED, unitTag, magicka.current, magicka.maximum, stamina.current, stamina.maximum, isSelf)
 end
 
@@ -120,7 +124,7 @@ local function GetPowerValues(unitResources, powerType)
 end
 
 function handler:Send()
-    if(not saveData.enabled or not IsUnitGrouped("player")) then return end
+    if(not saveData.enabled or not LGS:IsSendingEnabled() or not IsUnitGrouped("player")) then return end
     local now = GetTimeStamp()
     local timeout = IsUnitInCombat("player") and MIN_COMBAT_SEND_TIMEOUT or MIN_SEND_TIMEOUT
     if(now - lastSendTime < timeout) then return end
@@ -160,7 +164,7 @@ function handler:Send()
             index = LGS:WriteUint16(data, index, staminaMaximum)
         end
 
-        --		Log("Send %d byte: is full: %s, needs full: %s, percent only: %s", #data, tostring(sendFullUpdate), tostring(needFullUpdate), tostring(percentOnly))
+        logger:Verbose("Send %d byte: is full: %s, needs full: %s, percent only: %s", #data, tostring(sendFullUpdate), tostring(needFullUpdate), tostring(percentOnly))
         if(LGS:Send(type, data)) then
             lastSendTime = now
             magicka.percent = magickaPercent
@@ -185,6 +189,7 @@ local isActive = false
 
 local function StartSending()
     if(not isActive and saveData.enabled and IsUnitGrouped("player")) then
+        logger:Debug("Start Sending")
         EVENT_MANAGER:RegisterForUpdate("LibGroupSocketResourceHandler", 1000, OnUpdate)
         isActive = true
     end
@@ -192,6 +197,7 @@ end
 
 local function StopSending()
     if(isActive) then
+        logger:Debug("Stop Sending")
         EVENT_MANAGER:UnregisterForUpdate("LibGroupSocketResourceHandler")
         isActive = false
     end
