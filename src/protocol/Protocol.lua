@@ -1,0 +1,144 @@
+local LGB = LibGroupBroadcast
+local FieldBase = LGB.internal.class.FieldBase
+local BinaryBuffer = LGB.internal.class.BinaryBuffer
+local FixedSizeDataMessage = LGB.internal.class.FixedSizeDataMessage
+local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
+local logger = LGB.internal.logger
+
+local Protocol = ZO_InitializingObject:Subclass()
+LGB.internal.class.Protocol = Protocol
+
+function Protocol:Initialize(id, name, manager)
+    self.id = id
+    self.name = name
+    self.manager = manager
+    self.fields = {}
+    self.fieldsByLabel = {}
+    self.finalized = false
+end
+
+function Protocol:GetId()
+    return self.id
+end
+
+function Protocol:GetName()
+    return self.name
+end
+
+function Protocol:AddField(field)
+    assert(not self.finalized, "Protocol '" .. self.name .. "' has already been finalized")
+    assert(ZO_Object.IsInstanceOf(field, FieldBase), "Field must be an instance of FieldBase")
+    assert(not field.index, "Field with label " .. field.label .. " already has an index")
+    assert(not self.fieldsByLabel[field.label], "Field with label " .. field.label .. " already exists")
+
+    field.index = #self.fields + 1
+    self.fieldsByLabel[field.label] = field
+    self.fields[field.index] = field
+
+    return self
+end
+
+function Protocol:OnData(callback)
+    assert(not self.finalized, "Protocol '" .. self.name .. "' has already been finalized")
+    assert(type(callback) == "function", "Callback must be a function")
+
+    self.onDataCallback = callback
+    return self
+end
+
+function Protocol:Finalize(options)
+    if #self.fields == 0 then
+        logger:Warn("Protocol '%s' has no fields", self.name)
+        return false
+    end
+
+    if not self.onDataCallback then
+        logger:Warn("Protocol '%s' has no data callback", self.name)
+        return false
+    end
+
+    local isValid = true
+    for i = 1, #self.fields do
+        local field = self.fields[i]
+        local warnings = field:GetWarnings()
+        if #warnings > 0 then
+            if isValid then
+                logger:Warn("Protocol '%s' has invalid fields:", self.name)
+            end
+            isValid = false
+            logger:Warn("Field '%s' has warnings:", field.label)
+            for j = 1, #warnings do
+                logger:Warn(warnings[j])
+            end
+        end
+    end
+    if not isValid then
+        return false
+    end
+
+    self.options = ZO_ShallowTableCopy(options or {}, {
+        isRelevantInCombat = false,
+        replaceQueuedMessages = true
+    })
+
+    local minBits, maxBits = 0, 0
+    for i = 1, #self.fields do
+        local field = self.fields[i]
+        local minFieldBits, maxFieldBits = field:GetNumBitsRange()
+        minBits = minBits + minFieldBits
+        maxBits = maxBits + maxFieldBits
+    end
+
+    local minBytes = minBits == 7 and 2 or (2 + math.ceil(minBits / 8))
+    local maxBytes = maxBits == 7 and 2 or (2 + math.ceil(maxBits / 8))
+    logger:Debug("Protocol '%s' has been finalized. Expected message size is between %d and %d bytes.", self.name, minBytes, maxBytes)
+
+    self.finalized = true
+    return true
+end
+
+function Protocol:IsFinalized()
+    return self.finalized
+end
+
+function Protocol:Send(values, options)
+    assert(self.finalized, "Protocol '" .. self.name .. "' has not been finalized")
+
+    local data = BinaryBuffer:New(7)
+    for i = 1, #self.fields do
+        local field = self.fields[i]
+        if not field:Serialize(data, values[field:GetLabel()]) then
+            return false
+        end
+    end
+
+    options = options or {}
+    for key, value in pairs(self.options) do
+        if options[key] == nil then
+            options[key] = value
+        end
+    end
+
+    local message
+    if data:GetNumBits() == 7 then
+        message = FixedSizeDataMessage:New(self.id, data, options)
+    else
+        message = FlexSizeDataMessage:New(self.id, data, options)
+    end
+
+    self.manager:QueueDataMessage(message)
+    return true
+end
+
+function Protocol:Receive(unitTag, message)
+    assert(self.finalized, "Protocol '" .. self.name .. "' has not been finalized")
+
+    local data = message:GetData()
+    local values = {}
+    for i = 1, #self.fields do
+        local field = self.fields[i]
+        values[field:GetLabel()] = field:Deserialize(data)
+    end
+
+    self.onDataCallback(unitTag, values)
+end
