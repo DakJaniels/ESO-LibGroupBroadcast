@@ -1,10 +1,10 @@
-## Title: LibGroupSocket
+## Title: LibGroupBroadcast - LibGroupSocket compatibility layer
 ## Author: sirinsidiator
 ## Version: @VERSION_NUMBER@
 ## APIVersion: @API_VERSION@
 ## AddOnVersion: @BUILD_NUMBER@
 ## IsLibrary: true
-## DependsOn: LibMapPing LibGPS LibAddonMenu-2.0 LibDebugLogger LibChatMessage
+## DependsOn: LibAddonMenu-2.0 LibDebugLogger LibGroupBroadcast
 ## OptionalDependsOn: LibStub
 ## SavedVariables: LibGroupSocket_Data
 
