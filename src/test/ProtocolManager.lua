@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local ProtocolManager = LGB.internal.class.ProtocolManager
 local HandlerManager = LGB.internal.class.HandlerManager
@@ -157,6 +158,24 @@ Taneth("LibGroupBroadcast", function()
             assert.equals("group2", protocol2IncomingUnitTag)
             assert.equals(true, protocol2IncomingData.flagC)
             assert.equals(1, protocol2IncomingData.number)
+        end)
+
+        it("should dynamically choose the correct message type for the amount of data", function()
+            local manager, handlerId = CreateProtocolManager()
+
+            local protocol = manager:DeclareProtocol(handlerId, 0, "test")
+            protocol:AddField(NumericField:New("numberA", { numBits = 6 }))
+            protocol:AddField(OptionalField:New(NumericField:New("numberB")))
+            protocol:OnData(function() end)
+            protocol:Finalize()
+
+            assert.is_true(protocol:Send({ numberA = 1 }))
+            local message1 = manager.dataMessageQueue:DequeueMessage()
+            assert.is_true(ZO_Object.IsInstanceOf(message1, FixedSizeDataMessage))
+
+            assert.is_true(protocol:Send({ numberA = 2, numberB = 3 }))
+            local message2 = manager.dataMessageQueue:DequeueMessage()
+            assert.is_true(ZO_Object.IsInstanceOf(message2, FlexSizeDataMessage))
         end)
     end)
 end)

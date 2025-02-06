@@ -1,7 +1,10 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local FrameHandler = LGB.internal.class.FrameHandler
 local logger = LGB.internal.logger
 
+--- @class BroadcastManager
+--- @field New fun(self: BroadcastManager, gameApiWrapper: GameApiWrapper, protocolManager: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue): BroadcastManager
 local BroadcastManager = ZO_InitializingObject:Subclass()
 LGB.internal.class.BroadcastManager = BroadcastManager
 

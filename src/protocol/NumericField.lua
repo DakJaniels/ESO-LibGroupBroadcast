@@ -1,18 +1,42 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
+local logger = LGB.internal.logger
+
+--- @class NumericFieldOptions: FieldOptionsBase
+--- @field defaultValue number? The default value for the field
+--- @field numBits number? The number of bits to use for the field. If not provided, it will be calculated based on the value range.
+--- @field minValue number? The minimum value that can be sent. If not provided, it will be calculated based on the number of bits and maxValue.
+--- @field maxValue number? The maximum value that can be sent. If not provided, it will be calculated based on the number of bits and minValue.
+--- @field precision number? The precision to use when sending the value. Will be used to divide the value before sending and multiply it after receiving. If not provided, the value will be sent as is.
+--- @field trimValues boolean? Whether to trim values to the range. If not provided, send will fail with a warning when the value is out of range.
 
 --- @class NumericField: FieldBase
+--- @field New fun(self: NumericField, label: string, options?: NumericFieldOptions): NumericField
+--- @field options NumericFieldOptions
 local NumericField = FieldBase:Subclass()
 LGB.internal.class.NumericField = NumericField
 
 local MIN_SUPPORTED_VALUE = 0
 local MAX_SUPPORTED_VALUE = 2 ^ 32 - 1
+local AVAILABLE_OPTIONS = {
+    numBits = true,
+    minValue = true,
+    maxValue = true,
+    precision = true,
+    trimValues = true,
+}
 
--- use FPU's rounding mode as seen in https://stackoverflow.com/a/58411671
+--- use FPU's rounding mode as seen in https://stackoverflow.com/a/58411671
+--- @param num number
+--- @return number
 local function Round(num)
     return num + (2 ^ 52 + 2 ^ 51) - (2 ^ 52 + 2 ^ 51)
 end
 
+--- @param value number
+--- @param precision number?
+--- @return number
 local function ApplyPrecision(value, precision)
     if not precision or precision == 1 then
         return value
@@ -25,10 +49,16 @@ local function ApplyPrecision(value, precision)
     end
 end
 
+--- Initializes a new NumericField object.
+--- @param label string The label of the field.
+--- @param options NumericFieldOptions Optional configuration for the field.
+--- @see NumericFieldOptions
 function NumericField:Initialize(label, options)
+    self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     FieldBase.Initialize(self, label, options)
 
     options = self.options
+
     if not self:Assert(options.numBits == nil or (options.numBits >= 2 and options.numBits <= 32), "Number of bits must be between 2 and 32") then return end
 
     if options.minValue then
@@ -67,19 +97,31 @@ function NumericField:Initialize(label, options)
     self.maxSendValue = 2 ^ numBits - 1
     if not self:Assert(self.maxSendValue >= range, string.format("Effective value range (%s) is larger then possible transmission value (%s)", range, self.maxSendValue)) then return end
     self.numBits = numBits
+
+    if options.defaultValue then
+        if not self:Assert(type(options.defaultValue) == "number", "defaultValue must be a number") then return end
+        if not self:Assert(options.defaultValue >= self.minValue and options.defaultValue <= self.maxValue, "defaultValue out of range") then return end
+    end
 end
 
-function NumericField:GetNumBitsRange()
+--- @protected
+function NumericField:GetNumBitsRangeInternal()
     return self.numBits, self.numBits
 end
 
+--- Writes the value to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param value? number The value to serialize.
 function NumericField:Serialize(data, value)
     value = self:GetValueOrDefault(value)
-    assert(type(value) == "number", "Value must be a number")
+    if type(value) ~= "number" then
+        logger:Warn("Value must be a number")
+        return false
+    end
 
     local options = self.options
     if options.trimValues then
-        -- log debug
+        logger:Debug("Trimming value to range")
         if value < self.minValue then
             value = self.minValue
         elseif value > self.maxValue then
@@ -87,18 +129,21 @@ function NumericField:Serialize(data, value)
         end
     else
         if value < self.minValue or value > self.maxValue then
-            -- log warning
+            logger:Warn("Value out of range")
             return false
         end
     end
 
     value = ApplyPrecision(value - self.minValue, options.precision)
-    assert(value >= 0 and value <= self.maxSendValue, "Value out of range")
+    assert(value >= 0 and value <= self.maxSendValue, "Value out of range") -- should never happen
     data:GrowIfNeeded(self.numBits)
     data:WriteUInt(value, self.numBits)
     return true
 end
 
+--- Reads the value from the data stream.
+--- @param data BinaryBuffer The data stream to read from.
+--- @return number value The deserialized value.
 function NumericField:Deserialize(data)
     local value = data:ReadUInt(self.numBits)
     local precision = self.options.precision

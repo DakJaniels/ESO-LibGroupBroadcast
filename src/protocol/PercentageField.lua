@@ -1,7 +1,13 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local NumericField = LGB.internal.class.NumericField
 
+--- @class PercentageFieldOptions: FieldOptionsBase
+--- @field defaultValue number? The default value for the field. Must be between 0 and 1.
+--- @field numBits number? The number of bits to use for the percentage.
+
 --- @class PercentageField: NumericField
+--- @field New fun(self: PercentageField, label: string, options?: PercentageFieldOptions): PercentageField
 local PercentageField = NumericField:Subclass()
 LGB.internal.class.PercentageField = PercentageField
 

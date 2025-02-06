@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local OptionalField = LGB.internal.class.OptionalField
 local NumericField = LGB.internal.class.NumericField
@@ -36,7 +37,7 @@ Taneth("LibGroupBroadcast", function()
             local field = OptionalField:New(NumericField:New("test"))
             assert.is_true(field:IsValid())
             local buffer = BinaryBuffer:New(1)
-            field:Serialize(buffer, nil)
+            assert.is_true(field:Serialize(buffer, nil))
             buffer:Rewind()
             assert.is_nil(field:Deserialize(buffer))
             assert.equals(1, buffer:GetNumBits())
@@ -46,7 +47,7 @@ Taneth("LibGroupBroadcast", function()
             local field = OptionalField:New(NumericField:New("test", { numBits = 4 }))
             assert.is_true(field:IsValid())
             local buffer = BinaryBuffer:New(1)
-            field:Serialize(buffer, 0)
+            assert.is_true(field:Serialize(buffer, 0))
             buffer:Rewind()
             assert.equals(0, field:Deserialize(buffer))
             assert.equals(5, buffer:GetNumBits())
@@ -56,7 +57,7 @@ Taneth("LibGroupBroadcast", function()
             local field = OptionalField:New(NumericField:New("test", { defaultValue = 3 }))
             assert.is_true(field:IsValid())
             local buffer = BinaryBuffer:New(1)
-            field:Serialize(buffer)
+            assert.is_true(field:Serialize(buffer))
             buffer:Rewind()
             assert.equals(3, field:Deserialize(buffer))
             assert.equals(1, buffer:GetNumBits())

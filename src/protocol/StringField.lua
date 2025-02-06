@@ -1,11 +1,27 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
+local FieldBase = LGB.internal.class.FieldBase
 local NumericField = LGB.internal.class.NumericField
 local ArrayField = LGB.internal.class.ArrayField
 local EnumField = LGB.internal.class.EnumField
+local logger = LGB.internal.logger
 
---- @class StringField: ArrayField
-local StringField = ArrayField:Subclass()
+--- @class StringFieldOptions: FieldOptionsBase
+--- @field characters string? The characters to use for the string. If not provided, the string will be treated as a sequence of bytes.
+--- @field minLength number? The minimum length of the string. Defaults to 0.
+--- @field maxLength number? The maximum length of the string. Defaults to 255.
+--- @field defaultValue string? The default value for the field.
+
+--- @class StringField: FieldBase
+--- @field New fun(self: StringField, label: string, options?: StringFieldOptions): StringField
+local StringField = FieldBase:Subclass()
 LGB.internal.class.StringField = StringField
+
+local AVAILABLE_OPTIONS = {
+    characters = true,
+    minLength = true,
+    maxLength = true,
+}
 
 -- as of v10.3.2 utf8.char still crashes the game, so we use this code ported from the utf8lib in Lua5.3 instead
 local UTF8BUFFSZ = 8
@@ -30,33 +46,58 @@ local function utf8esc(x)
 end
 
 function StringField:Initialize(label, options)
-    options = options or {}
+    self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
+    FieldBase.Initialize(self, label, options)
+    options = self.options
 
     local charField
     if options.characters then
-        if not self:Assert(type(options.characters) == "string", "characters must be a string") then return end
-        local codepoints = { utf8.codepoint(options.characters, 1, #options.characters) }
+        local characters = options.characters
+        if not self:Assert(type(characters) == "string", "characters must be a string") then return end
+        local codepoints = { utf8.codepoint(characters, 1, #characters) }
         charField = EnumField:New(label, codepoints)
     else
         charField = NumericField:New(label, { numBits = 8 })
     end
-    ArrayField.Initialize(self, charField, options)
+    self.arrayField = self:RegisterSubField(ArrayField:New(charField, {
+        minLength = options.minLength,
+        maxLength = options.maxLength,
+    }))
+
+    if options.defaultValue then
+        self:Assert(type(options.defaultValue) == "string", "defaultValue must be a string")
+    end
 end
 
+--- @protected
+function StringField:GetNumBitsRangeInternal()
+    return self.arrayField:GetNumBitsRange()
+end
+
+--- Writes the value to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param value? string The value to serialize. If not provided, the default value specified in the options will be used.
 function StringField:Serialize(data, value)
     value = self:GetValueOrDefault(value)
-    assert(type(value) == "string", "Value must be a string")
+    if type(value) ~= "string" then
+        logger:Warn("value must be a string")
+        return false
+    end
+
     local parts
     if self.options.characters then
         parts = { utf8.codepoint(value, 1, #value) }
     else
         parts = { string.byte(value, 1, #value) }
     end
-    return ArrayField.Serialize(self, data, parts)
+    return self.arrayField:Serialize(data, parts)
 end
 
+--- Reads the value from the data stream.
+--- @param data BinaryBuffer The data stream to read from.
+--- @return string value The deserialized value.
 function StringField:Deserialize(data)
-    local parts = ArrayField.Deserialize(self, data)
+    local parts = self.arrayField:Deserialize(data)
     if #parts == 0 then return "" end
     if self.options.characters then
         for i = 1, #parts do

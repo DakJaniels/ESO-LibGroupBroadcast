@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
 local ControlMessageBase = LGB.internal.class.ControlMessageBase

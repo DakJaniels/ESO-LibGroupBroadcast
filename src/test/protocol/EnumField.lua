@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local EnumField = LGB.internal.class.EnumField
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
@@ -31,13 +32,24 @@ Taneth("LibGroupBroadcast", function()
             assert.equals(5, maxC)
         end)
 
+        it("should support a defaultValue", function()
+            local values = { "a", true, 1, "test" }
+            local field = EnumField:New("test", values, { defaultValue = values[2] })
+            assert.is_true(field:IsValid())
+
+            local buffer = BinaryBuffer:New(1)
+            assert.is_true(field:Serialize(buffer))
+            buffer:Rewind()
+            assert.equals(values[2], field:Deserialize(buffer))
+        end)
+
         it("should be able to serialize and deserialize a value", function()
             local values = { "a", true, 1, "test" }
             local field = EnumField:New("test", values)
             assert.is_true(field:IsValid())
             for i = 1, #values do
                 local buffer = BinaryBuffer:New(1)
-                field:Serialize(buffer, values[i])
+                assert.is_true(field:Serialize(buffer, values[i]))
                 buffer:Rewind()
                 assert.equals(values[i], field:Deserialize(buffer))
                 assert.equals(2, buffer:GetNumBits())

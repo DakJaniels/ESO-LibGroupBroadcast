@@ -1,3 +1,4 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local CalculateCRC3ROHC = LGB.internal.CalculateCRC3ROHC
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
@@ -7,6 +8,8 @@ local FixedSizeDataMessage = LGB.internal.class.FixedSizeDataMessage
 local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
 local logger = LGB.internal.logger
 
+--- @class FrameHandler
+--- @field New fun(self: FrameHandler): FrameHandler
 local FrameHandler = ZO_InitializingObject:Subclass()
 LGB.internal.class.FrameHandler = FrameHandler
 

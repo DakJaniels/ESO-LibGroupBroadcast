@@ -1,8 +1,16 @@
 local GroupResources = LibGroupBroadcast:GetHandler("GroupResources")
 
+--- @class GroupResourceManager
 local GroupResourceManager = ZO_InitializingObject:Subclass()
 GroupResources.GroupResourceManager = GroupResourceManager
 
+--- Initializes the group resource manager.
+--- @param handlerId string The handler ID.
+--- @param id string The ID of the group resource.
+--- @param name string The name of the group resource.
+--- @param powerType number The power type of the group resource.
+--- @param callbackManager ZO_CallbackObject The callback manager.
+--- @param api LibGroupBroadcast The API.
 function GroupResourceManager:Initialize(handlerId, id, name, powerType, callbackManager, api)
     local protocol = api:DeclareProtocol(handlerId, id, name)
     assert(protocol, "Failed to declare protocol for " .. name)

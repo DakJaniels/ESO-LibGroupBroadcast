@@ -1,3 +1,4 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local logger = LGB.internal.logger
 local CustomEventControlMessage = LGB.internal.class.CustomEventControlMessage
@@ -5,6 +6,8 @@ local Protocol = LGB.internal.class.Protocol
 
 local CUSTOM_EVENT_CALLBACK_PREFIX = "OnCustomEvent_"
 
+--- @class ProtocolManager
+--- @field New fun(self: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue, handlerManager: HandlerManager): ProtocolManager
 local ProtocolManager = ZO_InitializingObject:Subclass()
 LGB.internal.class.ProtocolManager = ProtocolManager
 

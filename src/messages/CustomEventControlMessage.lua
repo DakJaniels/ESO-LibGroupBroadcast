@@ -1,3 +1,4 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local ControlMessageBase = LGB.internal.class.ControlMessageBase
 

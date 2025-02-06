@@ -1,5 +1,8 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 
+--- @class BinaryBuffer
+--- @field New fun(self: BinaryBuffer, numBits: number): BinaryBuffer
 local BinaryBuffer = ZO_InitializingObject:Subclass()
 LGB.internal.class.BinaryBuffer = BinaryBuffer
 
@@ -9,6 +12,8 @@ local function GetIndices(cursor)
     return byteIndex, bitIndex
 end
 
+--- Initializes a new BinaryBuffer with the specified number of bits.
+--- @param numBits number The number of bits the buffer should have. Has to be a positive number.
 function BinaryBuffer:Initialize(numBits)
     assert(type(numBits) == "number" and numBits > 0, "numBits must be a positive number")
     self.bytes = {}
@@ -16,6 +21,7 @@ function BinaryBuffer:Initialize(numBits)
     self:Clear()
 end
 
+--- Clears the buffer and sets all bits to 0. The length of the buffer remains the same.
 function BinaryBuffer:Clear()
     for i = 1, self:GetByteLength() do
         self.bytes[i] = 0
@@ -23,6 +29,8 @@ function BinaryBuffer:Clear()
     self.cursor = 1
 end
 
+--- Grows the buffer if the specified number of bits would exceed the current length.
+--- @param numBits number The number of bits to grow the buffer by.
 function BinaryBuffer:GrowIfNeeded(numBits)
     assert(type(numBits) == "number" and numBits > 0, "numBits must be a positive number")
     local remainingBits = self.bitLength - self.cursor + 1
@@ -36,14 +44,20 @@ function BinaryBuffer:GrowIfNeeded(numBits)
     end
 end
 
+--- Getter for the number of bits in the buffer.
+--- @return number bitLength The number of bits in the buffer.
 function BinaryBuffer:GetNumBits()
     return self.bitLength
 end
 
+--- Getter for the number of bytes in the buffer.
+--- @return number byteLength The number of bytes in the buffer (rounded up to full bytes).
 function BinaryBuffer:GetByteLength()
     return math.ceil(self.bitLength / 8)
 end
 
+--- Writes a single bit to the buffer.
+--- @param value number|boolean The value to write. Must be 1/0 or true/false.
 function BinaryBuffer:WriteBit(value)
     assert(value == 1 or value == 0 or value == true or value == false, "Value must be 1/0 or true/false")
     assert(self.cursor <= self.bitLength, "Attempted to write past end of buffer")
@@ -61,6 +75,9 @@ function BinaryBuffer:WriteBit(value)
     self.cursor = self.cursor + 1
 end
 
+--- Writes an unsigned integer to the buffer.
+--- @param value number The value to write. Must be a non-negative number less than 2^numBits.
+--- @param numBits number The number of bits to write. Must be a positive number.
 function BinaryBuffer:WriteUInt(value, numBits)
     assert(type(value) == "number" and value >= 0, "Value must be a non-negative number")
     assert(type(numBits) == "number" and numBits > 0, "numBits must be a positive number")
@@ -75,6 +92,8 @@ function BinaryBuffer:WriteUInt(value, numBits)
     end
 end
 
+--- Writes a string to the buffer.
+--- @param value string The value to write. Must be a string.
 function BinaryBuffer:WriteString(value)
     assert(type(value) == "string", "Value must be a string")
     assert(self.cursor + #value * 8 - 1 <= self.bitLength, "Attempted to write past end of buffer")
@@ -83,6 +102,10 @@ function BinaryBuffer:WriteString(value)
     end
 end
 
+--- Writes another buffer to the buffer. The cursor of the input buffer is modified.
+--- @param value BinaryBuffer The buffer to write. Must be a BinaryBuffer.
+--- @param numBits? number The number of bits to write from the input buffer. If not specified the entire buffer is written.
+--- @param offset? number The offset to start reading from. If not specified the input buffer is read from the start.
 function BinaryBuffer:WriteBuffer(value, numBits, offset)
     assert(ZO_Object.IsInstanceOf(value, BinaryBuffer), "buffer must be a BinaryBuffer")
     assert(not numBits or numBits > 0 or numBits <= value.bitLength,
@@ -97,6 +120,9 @@ function BinaryBuffer:WriteBuffer(value, numBits, offset)
     end
 end
 
+--- Reads a single bit from the buffer.
+--- @param asBoolean? boolean Whether to return the value as a boolean. If not specified, the value is returned as a number.
+--- @return number|boolean value The read value. If asBoolean is true, the value is a boolean.
 function BinaryBuffer:ReadBit(asBoolean)
     assert(self.cursor <= self.bitLength, "Attempt to read past end of buffer")
 
@@ -111,17 +137,23 @@ function BinaryBuffer:ReadBit(asBoolean)
     return value
 end
 
+--- Reads an unsigned integer from the buffer.
+--- @param numBits number The number of bits to read. Must be a positive number.
+--- @return number value The read value.
 function BinaryBuffer:ReadUInt(numBits)
     assert(type(numBits) == "number" and numBits > 0, "numBits must be a positive number")
     assert(self.cursor + numBits - 1 <= self.bitLength, "Attempt to read past end of buffer")
 
     local value = 0
     for i = 1, numBits do
-        value = BitOr(value, BitLShift(self:ReadBit(), numBits - i))
+        value = BitOr(value, BitLShift(self:ReadBit() --[[@as number]], numBits - i))
     end
     return value
 end
 
+--- Reads a string from the buffer.
+--- @param byteLength number The number of bytes to read. Must be a positive number.
+--- @return string value The read value.
 function BinaryBuffer:ReadString(byteLength)
     assert(type(byteLength) == "number" and byteLength > 0, "byteLength must be a positive number")
     assert(self.cursor + byteLength * 8 - 1 <= self.bitLength, "Attempt to read past end of buffer")
@@ -133,6 +165,9 @@ function BinaryBuffer:ReadString(byteLength)
     return table.concat(result)
 end
 
+--- Reads a number of bits from the buffer and returns them as a new buffer.
+--- @param numBits number The number of bits to read from the buffer.
+--- @return BinaryBuffer value The new buffer.
 function BinaryBuffer:ReadBuffer(numBits)
     assert(type(numBits) == "number" and numBits > 0, "numBits must be a positive number")
     assert(self.cursor + numBits - 1 <= self.bitLength, "Attempt to read past end of buffer")
@@ -145,11 +180,15 @@ function BinaryBuffer:ReadBuffer(numBits)
     return result
 end
 
+--- Seeks the cursor by the specified number of bits.
+--- @param numBits number The number of bits to seek. Must be a positive number.
 function BinaryBuffer:Seek(numBits)
     assert(self.cursor + numBits - 1 <= self.bitLength, "Attempt to seek past end of buffer")
     self.cursor = self.cursor + numBits
 end
 
+--- Rewinds the cursor to the specified position (starting at 1).
+--- @param cursor? number The position to rewind to. If not specified, the cursor is rewound to the start of the buffer.
 function BinaryBuffer:Rewind(cursor)
     if cursor then
         assert(type(cursor) == "number" and cursor >= 1 and cursor <= self.bitLength,
@@ -160,6 +199,8 @@ function BinaryBuffer:Rewind(cursor)
     end
 end
 
+--- Returns the buffer as a hexadecimal string.
+--- @return string hexString The buffer as a hexadecimal string.
 function BinaryBuffer:ToHexString()
     local result = {}
     for i = 1, #self.bytes do
@@ -168,6 +209,9 @@ function BinaryBuffer:ToHexString()
     return table.concat(result, " ")
 end
 
+--- Creates a new BinaryBuffer from a hexadecimal string.
+--- @param hexString string The hexadecimal string to create the buffer from.
+--- @return BinaryBuffer value The new buffer.
 function BinaryBuffer.FromHexString(hexString)
     local bytes = {}
     for byte in hexString:gmatch("%x%x") do
@@ -179,6 +223,8 @@ function BinaryBuffer.FromHexString(hexString)
     return result
 end
 
+--- Returns the buffer as a table of unsigned 32-bit integers for use with the broadcast api.
+--- @return table<number> result The buffer as a table of unsigned 32-bit integers.
 function BinaryBuffer:ToUInt32Array()
     local uint32Count = math.ceil(#self.bytes / 4)
     local result = {}
@@ -197,6 +243,10 @@ function BinaryBuffer:ToUInt32Array()
     return result
 end
 
+--- Creates a new BinaryBuffer from unsigned 32-bit integers, as passed by the broadcast api.
+--- @param numBits number The number of bits the buffer should have. Must be a positive number.
+--- @param ... number The values to create the buffer from. Must match the specified number of bits.
+--- @return BinaryBuffer value The new buffer.
 function BinaryBuffer.FromUInt32Values(numBits, ...)
     local result = BinaryBuffer:New(numBits)
     local length = math.ceil(numBits / 32)

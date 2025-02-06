@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local CalculateCRC3ROHC = LGB.internal.CalculateCRC3ROHC
 
@@ -24,21 +25,5 @@ Taneth("LibGroupBroadcast", function()
             local actual = CalculateCRC3ROHC(fakeBuffer)
             assert.equals(expected, actual)
         end)
-    end)
-
-    describe("UIReloadHandler", function()
-        it("should be able to setup the event", function()
-            local handler = SetupEvent(0, "UIReload")
-            assert.equals("function", type(handler))
-        end)
-
-        it.async("should be able to send a ui reload", function(done)
-            local SendEvent = SetupEvent(0, "UIReload", function(unitTag)
-                assert.equals("player", unitTag)
-                done()
-            end)
-
-            SendEvent()
-        end, 1000)
     end)
 end)

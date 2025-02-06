@@ -3,16 +3,30 @@ if not authKey then
     error("Data broadcast auth key has already been claimed by " .. addonName)
 end
 
-LibGroupBroadcast = {
-    internal = {
-        logger = LibDebugLogger:Create("LibGroupBroadcast"),
-        callbackManager = ZO_CallbackObject:New(),
-        class = {},
-        handlers = {},
-        authKey = authKey,
-    },
+--- @class LibGroupBroadcastInternal
+--- @field logger LibDebugLogger
+--- @field callbackManager ZO_CallbackObject
+--- @field class table
+--- @field handlers table
+--- @field authKey string
+--- @field gameApiWrapper GameApiWrapper
+--- @field dataMessageQueue MessageQueue
+--- @field handlerManager HandlerManager
+--- @field protocolManager ProtocolManager
+--- @field broadcastManager BroadcastManager
+local internal = {
+    logger = LibDebugLogger:Create("LibGroupBroadcast"),
+    callbackManager = ZO_CallbackObject:New(),
+    class = {},
+    handlers = {},
+    authKey = authKey,
 }
-local internal = LibGroupBroadcast.internal
+
+--- @class LibGroupBroadcast
+--- @field private internal LibGroupBroadcastInternal
+LibGroupBroadcast = {
+    internal = internal
+}
 
 local function SetupInstance(instance)
     instance.dataMessageQueue = internal.class.MessageQueue:New()
@@ -23,6 +37,15 @@ local function SetupInstance(instance)
         instance.callbackManager, instance.dataMessageQueue)
 end
 
+--- @class LibGroupBroadcastMockInstance : LibGroupBroadcast
+--- @field callbackManager ZO_CallbackObject
+--- @field gameApiWrapper MockGameApiWrapper
+--- @field dataMessageQueue MessageQueue
+--- @field handlerManager HandlerManager
+--- @field protocolManager ProtocolManager
+--- @field broadcastManager BroadcastManager
+
+--- @return LibGroupBroadcastMockInstance
 function internal.SetupMockInstance()
     local callbackManager = ZO_CallbackObject:New()
     local instance = setmetatable({
@@ -55,9 +78,10 @@ function internal.SetupMockInstance()
         return instance.protocolManager:DeclareProtocol(...)
     end
 
-    return instance
+    return instance --[[@as LibGroupBroadcastMockInstance]]
 end
 
+--- @private
 function LibGroupBroadcast:Initialize()
     internal.gameApiWrapper = internal.class.GameApiWrapper:New(authKey, "LibGroupBroadcast", internal.callbackManager)
     SetupInstance(internal)

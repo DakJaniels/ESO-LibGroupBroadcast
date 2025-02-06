@@ -1,6 +1,9 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local GameApiWrapper = LGB.internal.class.GameApiWrapper
 
+--- @class MockGameApiWrapper: GameApiWrapper
+--- @field New fun(self: MockGameApiWrapper, callbackManager: ZO_CallbackObject): MockGameApiWrapper
 local MockGameApiWrapper = GameApiWrapper:Subclass()
 LGB.internal.class.MockGameApiWrapper = MockGameApiWrapper
 

@@ -1,16 +1,24 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
 
+local AVAILABLE_OPTIONS = {
+    numBits = true,
+}
+
 --- @class ReservedField: FieldBase
+--- @field New fun(self: ReservedField, label: string, numBits: number): ReservedField
 local ReservedField = FieldBase:Subclass()
 LGB.internal.class.ReservedField = ReservedField
 
 function ReservedField:Initialize(label, numBits)
+    self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     FieldBase.Initialize(self, label, { numBits = numBits })
     self:Assert(type(numBits) == "number" and numBits > 0, "numBits must be a positive number")
 end
 
-function ReservedField:GetNumBitsRange()
+--- @protected
+function ReservedField:GetNumBitsRangeInternal()
     local numBits = self.options.numBits
     return numBits, numBits
 end

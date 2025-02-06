@@ -1,3 +1,4 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local DataMessageBase = LGB.internal.class.DataMessageBase
 local BinaryBuffer = LGB.internal.class.BinaryBuffer

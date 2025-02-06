@@ -1,11 +1,9 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
 local MessageQueue = LGB.internal.class.MessageQueue
-local ControlMessageBase = LGB.internal.class.ControlMessageBase
-local CustomEventControlMessage = LGB.internal.class.CustomEventControlMessage
 local FixedSizeDataMessage = LGB.internal.class.FixedSizeDataMessage
-local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
 
 Taneth("LibGroupBroadcast", function()
     describe("MessageQueue", function()

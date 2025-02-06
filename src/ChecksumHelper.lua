@@ -1,3 +1,4 @@
+--- @class LibGroupBroadcastInternal
 local internal = LibGroupBroadcast.internal
 do
     -- CRC-3/ROHC calculation based on https://github.com/emn178/js-crc/

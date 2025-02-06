@@ -1,26 +1,33 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
+local logger = LGB.internal.logger
+
+--- @class FlagFieldOptions: FieldOptionsBase
+--- @field defaultValue boolean? The default value for the field.
 
 --- @class FlagField: FieldBase
+--- @field New fun(self: FlagField, label: string, options?: FlagFieldOptions): FlagField
 local FlagField = FieldBase:Subclass()
 LGB.internal.class.FlagField = FlagField
 
-
 function FlagField:Initialize(label, options)
     FieldBase.Initialize(self, label, options)
-
     options = self.options
-    self:Assert(options.defaultValue == nil or type(options.defaultValue) == "boolean",
-        "defaultValue must be a boolean or nil")
+    self:Assert(options.defaultValue == nil or type(options.defaultValue) == "boolean", "defaultValue must be a boolean")
 end
 
-function FlagField:GetNumBitsRange()
+--- @protected
+function FlagField:GetNumBitsRangeInternal()
     return 1, 1
 end
 
 function FlagField:Serialize(data, value)
     value = self:GetValueOrDefault(value)
-    assert(type(value) == "boolean", "Value must be a boolean")
+    if type(value) ~= "boolean" then
+        logger:Warn("Value must be a boolean")
+        return false
+    end
     data:GrowIfNeeded(1)
     data:WriteBit(value)
     return true

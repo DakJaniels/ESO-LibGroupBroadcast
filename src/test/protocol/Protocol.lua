@@ -1,11 +1,10 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local Protocol = LGB.internal.class.Protocol
 local FlagField = LGB.internal.class.FlagField
 local NumericField = LGB.internal.class.NumericField
 local VariantField = LGB.internal.class.VariantField
-local ArrayField = LGB.internal.class.ArrayField
-local TableField = LGB.internal.class.TableField
 local FixedSizeDataMessage = LGB.internal.class.FixedSizeDataMessage
 local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
 local BinaryBuffer = LGB.internal.class.BinaryBuffer

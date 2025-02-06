@@ -1,33 +1,23 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
 local FlagField = LGB.internal.class.FlagField
 
 --- @class OptionalField: FieldBase
+--- @field New fun(self: OptionalField, valueField: FieldBase): OptionalField
 local OptionalField = FieldBase:Subclass()
 LGB.internal.class.OptionalField = OptionalField
 
-function OptionalField:Initialize(field)
-    FieldBase.Initialize(self, field.label)
+function OptionalField:Initialize(valueField)
+    FieldBase.Initialize(self, valueField.label)
 
-    self.isNilField = FlagField:New("IsNil")
-    self.valueField = field
-    self:Assert(ZO_Object.IsInstanceOf(field, FieldBase), "'field' must be an instance of FieldBase")
+    self.isNilField = self:RegisterSubField(FlagField:New("IsNil"))
+    self.valueField = self:RegisterSubField(valueField)
+    self:Assert(ZO_Object.IsInstanceOf(valueField, FieldBase), "'valueField' must be an instance of FieldBase")
 end
 
-function OptionalField:GetWarnings()
-    local output = {}
-    local warnings = FieldBase.GetWarnings(self)
-    local isNilWarnings = self.isNilField:GetWarnings()
-    local valueWarnings = self.valueField:GetWarnings()
-    ZO_CombineNumericallyIndexedTables(output, warnings, isNilWarnings, valueWarnings)
-    return output
-end
-
-function OptionalField:IsValid()
-    return FieldBase.IsValid(self) and self.isNilField:IsValid() and self.valueField:IsValid()
-end
-
-function OptionalField:GetNumBitsRange()
+--- @protected
+function OptionalField:GetNumBitsRangeInternal()
     local minFlagBits, maxFlagBits = self.isNilField:GetNumBitsRange()
     local _, maxValueBits = self.valueField:GetNumBitsRange()
     return minFlagBits, maxFlagBits + maxValueBits

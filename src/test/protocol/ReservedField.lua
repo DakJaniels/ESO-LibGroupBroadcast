@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local ReservedField = LGB.internal.class.ReservedField
 local BinaryBuffer = LGB.internal.class.BinaryBuffer

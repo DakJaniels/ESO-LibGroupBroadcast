@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local StringField = LGB.internal.class.StringField
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
@@ -8,6 +9,17 @@ Taneth("LibGroupBroadcast", function()
         it("should be able to create a new instance", function()
             local field = StringField:New("test")
             assert.is_true(ZO_Object.IsInstanceOf(field, StringField))
+        end)
+
+        it("should support a defaultValue", function()
+            local value = "a"
+            local field = StringField:New("test", { defaultValue = value })
+            local buffer = BinaryBuffer:New(1)
+            assert.is_true(field:Serialize(buffer))
+
+            buffer:Rewind()
+            local actual = field:Deserialize(buffer)
+            assert.equals(value, actual)
         end)
 
         it("should be able to serialize and deserialize a string", function()
@@ -76,6 +88,15 @@ Taneth("LibGroupBroadcast", function()
             assert.equals("", field:Deserialize(buffer))
             assert.equals("あい", field:Deserialize(buffer))
             assert.equals("えお", field:Deserialize(buffer))
+        end)
+
+        it("should error when trying to write more characters than the maximum length", function()
+            local field = StringField:New("test", { maxLength = 4 })
+            assert.is_true(field:IsValid())
+
+            local buffer = BinaryBuffer:New(1)
+            assert.is_true(field:Serialize(buffer, "test"))
+            assert.is_false(field:Serialize(buffer, "tests"))
         end)
     end)
 end)

@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local NumericField = LGB.internal.class.NumericField
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
@@ -120,6 +121,17 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(field:Serialize(buffer, 1000))
             assert.is_false(field:Serialize(buffer, -1))
             assert.is_false(field:Serialize(buffer, 1001))
+        end)
+
+        it("should support a defaultValue", function()
+            local value = 42
+            local field = NumericField:New("test", { defaultValue = value })
+            local buffer = BinaryBuffer:New(1)
+            assert.is_true(field:Serialize(buffer))
+
+            buffer:Rewind()
+            local actual = field:Deserialize(buffer)
+            assert.equals(value, actual)
         end)
 
         it("should be able to serialize and deserialize signed numbers", function()

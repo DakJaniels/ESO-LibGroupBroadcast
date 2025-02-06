@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local VariantField = LGB.internal.class.VariantField
 local TableField = LGB.internal.class.TableField
@@ -13,6 +14,20 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(ZO_Object.IsInstanceOf(field, VariantField))
         end)
 
+        it("should support a defaultValue", function()
+            local value = { flagA = true }
+            local field = VariantField:New("test", {
+                FlagField:New("flagA"),
+                FlagField:New("flagB"),
+            }, { defaultValue = value })
+            local buffer = BinaryBuffer:New(1)
+            assert.is_true(field:Serialize(buffer))
+
+            buffer:Rewind()
+            local actual = field:Deserialize(buffer)
+            assert.same(value, actual)
+        end)
+
         it("should be able to serialize and deserialize nested fields", function()
             local field = VariantField:New("test", {
                 TableField:New("table", {
@@ -21,7 +36,6 @@ Taneth("LibGroupBroadcast", function()
                 }),
                 NumericField:New("number"),
             })
-            d(field:GetWarnings())
             assert.is_true(field:IsValid())
 
             local buffer = BinaryBuffer:New(1)

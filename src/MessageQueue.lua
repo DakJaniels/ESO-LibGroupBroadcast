@@ -1,5 +1,10 @@
+--- @class LibGroupBroadcast
+local LGB = LibGroupBroadcast
+
+--- @class MessageQueue
+--- @field New fun(self: MessageQueue): MessageQueue
 local MessageQueue = ZO_InitializingObject:Subclass()
-LibGroupBroadcast.internal.class.MessageQueue = MessageQueue
+LGB.internal.class.MessageQueue = MessageQueue
 
 function MessageQueue:Initialize()
     self.nextId = 1

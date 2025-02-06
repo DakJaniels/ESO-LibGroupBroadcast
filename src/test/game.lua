@@ -3,6 +3,7 @@
 -- SPDX-License-Identifier: Artistic-2.0
 
 if not Taneth then return end
+--- @class LibGroupBroadcastInternal
 local internal = LibGroupBroadcast.internal
 local authKey = internal.authKey
 

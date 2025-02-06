@@ -1,40 +1,37 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
+local logger = LGB.internal.logger
+
+--- @class TableFieldOptions: FieldOptionsBase
+--- @field defaultValue table? The default value for the field.
 
 --- @class TableField: FieldBase
+--- @field New fun(self: TableField, label: string, valueFields: FieldBase[], options?: TableFieldOptions): TableField
 local TableField = FieldBase:Subclass()
-LibGroupBroadcast.internal.class.TableField = TableField
+LGB.internal.class.TableField = TableField
 
-function TableField:Initialize(label, fields, options)
+function TableField:Initialize(label, valueFields, options)
     FieldBase.Initialize(self, label, options)
-    if self:Assert(type(fields) == "table", "'fields' must be a table") then
-        for i = 1, #fields do
-            if not self:Assert(ZO_Object.IsInstanceOf(fields[i], FieldBase), "All fields must be instances of FieldBase") then break end
+    options = self.options
+
+    if self:Assert(type(valueFields) == "table", "'fields' must be a table") then
+        for i = 1, #valueFields do
+            if not self:Assert(ZO_Object.IsInstanceOf(valueFields[i], FieldBase), "All valueFields must be instances of FieldBase") then break end
+            self:RegisterSubField(valueFields[i])
         end
     else
-        fields = {}
+        valueFields = {}
     end
-    self.fields = fields
+    self.fields = valueFields
+
+    if options.defaultValue then
+        self:Assert(type(options.defaultValue) == "table", "defaultValue must be a table")
+    end
 end
 
-function TableField:GetWarnings()
-    local output = {}
-    ZO_CombineNumericallyIndexedTables(FieldBase.GetWarnings(self))
-    for i = 1, #self.fields do
-        ZO_CombineNumericallyIndexedTables(output, self.fields[i]:GetWarnings())
-    end
-    return output
-end
-
-function TableField:IsValid()
-    if not FieldBase.IsValid(self) then return false end
-    for i = 1, #self.fields do
-        if not self.fields[i]:IsValid() then return false end
-    end
-    return true
-end
-
-function TableField:GetNumBitsRange()
+--- @protected
+function TableField:GetNumBitsRangeInternal()
     local minBits, maxBits = 0, 0
     for i = 1, #self.fields do
         local minFieldBits, maxFieldBits = self.fields[i]:GetNumBitsRange()
@@ -46,6 +43,11 @@ end
 
 function TableField:Serialize(data, value)
     value = self:GetValueOrDefault(value)
+    if type(value) ~= "table" then
+        logger:Warn("value must be a table")
+        return false
+    end
+
     for i = 1, #self.fields do
         local field = self.fields[i]
         if not field:Serialize(data, value[field.label]) then return false end

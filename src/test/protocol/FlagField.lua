@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local FlagField = LGB.internal.class.FlagField
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
@@ -36,11 +37,11 @@ Taneth("LibGroupBroadcast", function()
             assert.is_false(field:Deserialize(buffer))
         end)
 
-        it("should fail with an error when serializing a non-boolean value", function()
+        it("should return false when serializing a non-boolean value", function()
             local field = FlagField:New("test")
             assert.is_true(field:IsValid())
             local buffer = BinaryBuffer:New(1)
-            assert.has_error("Value must be a boolean", function() field:Serialize(buffer, 0) end)
+            assert.is_false(field:Serialize(buffer, 0))
         end)
 
         it("should support a defaultValue", function()

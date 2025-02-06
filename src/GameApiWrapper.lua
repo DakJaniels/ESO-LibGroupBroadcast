@@ -1,7 +1,10 @@
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
 local logger = LGB.internal.logger
 
+--- @class GameApiWrapper
+--- @field New fun(self:GameApiWrapper, authKey: string, namespace: string, callbackManager: ZO_CallbackObject):GameApiWrapper
 local GameApiWrapper = ZO_InitializingObject:Subclass()
 LGB.internal.class.GameApiWrapper = GameApiWrapper
 
@@ -9,6 +12,7 @@ local BROADCAST_NUM_BITS = 32 * 8
 local BROADCAST_SEND_DELAY_MS = 500
 
 local keyVault = {}
+local BroadcastAddOnDataToGroup = BroadcastAddOnDataToGroup
 
 function GameApiWrapper:Initialize(authKey, namespace, callbackManager)
     keyVault[self] = authKey

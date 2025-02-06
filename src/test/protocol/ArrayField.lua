@@ -1,4 +1,5 @@
 if not Taneth then return end
+--- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local ArrayField = LGB.internal.class.ArrayField
 local FlagField = LGB.internal.class.FlagField
@@ -12,7 +13,7 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(ZO_Object.IsInstanceOf(field, ArrayField))
         end)
 
-        it("should be use the label of the inner field", function()
+        it("should use the label of the inner field", function()
             local field = ArrayField:New(FlagField:New("test"))
             assert.is_true(field:IsValid())
             assert.equals("test", field.label)
@@ -39,12 +40,24 @@ Taneth("LibGroupBroadcast", function()
             assert.equals(3 + 9 * 4, maxC)
         end)
 
+        it("should support a defaultValue", function()
+            local value = { true, false, true }
+            local field = ArrayField:New(FlagField:New("test"), { defaultValue = value })
+            local buffer = BinaryBuffer:New(11)
+            assert.is_true(field:Serialize(buffer))
+            assert.equals(8 + 3, buffer:GetNumBits())
+
+            buffer:Rewind()
+            local actual = field:Deserialize(buffer)
+            assert.same(value, actual)
+        end)
+
         it("should be able to serialize and deserialize an empty array", function()
             local field = ArrayField:New(FlagField:New("test"))
             assert.is_true(field:IsValid())
 
             local buffer = BinaryBuffer:New(8)
-            field:Serialize(buffer, {})
+            assert.is_true(field:Serialize(buffer, {}))
             assert.equals(8, buffer:GetNumBits())
 
             buffer:Rewind()
@@ -58,7 +71,7 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(field:IsValid())
 
             local buffer = BinaryBuffer:New(8)
-            field:Serialize(buffer, input)
+            assert.is_true(field:Serialize(buffer, input))
             assert.equals(8 + #input, buffer:GetNumBits())
 
             buffer:Rewind()
@@ -75,7 +88,7 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(field:IsValid())
 
             local buffer = BinaryBuffer:New(8)
-            field:Serialize(buffer, input)
+            assert.is_true(field:Serialize(buffer, input))
             assert.equals(3 + #input * 4, buffer:GetNumBits())
 
             buffer:Rewind()
