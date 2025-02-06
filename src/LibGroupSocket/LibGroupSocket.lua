@@ -71,7 +71,7 @@ protocol:AddField(CreateNumericField("messageType", {
 protocol:AddField(CreateArrayField(CreateNumericField("data", {
     numBits = 8
 }), {
-    maxSize = 7
+    maxLength = 7
 }))
 
 protocol:OnData(function(unitTag, incoming)

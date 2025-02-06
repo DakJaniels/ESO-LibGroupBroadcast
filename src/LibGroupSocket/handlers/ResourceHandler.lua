@@ -111,8 +111,9 @@ local function Load()
         InitializeSaveData(data.handlers[type])
     end)
 
-    LGB:RegisterForStaminaUpdate(OnStaminaChanged)
-    LGB:RegisterForMagickaUpdate(OnMagickaChanged)
+    local groupResources = LGB:GetHandler("GroupResources")
+    groupResources:RegisterForStaminaChanges(OnStaminaChanged)
+    groupResources:RegisterForMagickaChanges(OnMagickaChanged)
 
     handler.Unload = Unload
 end

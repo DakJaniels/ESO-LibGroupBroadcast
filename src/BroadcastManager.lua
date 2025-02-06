@@ -113,6 +113,7 @@ function BroadcastManager:SendData()
             frameHandler:Reset()
         else
             -- TODO handle failures
+            frameHandler:Reset()
             logger:Warn("Broadcast failed with result %d", result)
         end
     end
