@@ -58,24 +58,10 @@ function internal.SetupMockInstance()
     return instance
 end
 
-local function InitializeUIReloadHandler()
-    local SendEvent = LibGroupSocket:DeclareCustomEvent(0, "UIReload")
-    -- LGB:RegisterForCustomEvent("UIReload", function(unitTag) end)
-    if not SendEvent then return end
-
-    EVENT_MANAGER:RegisterForEvent("LGBUIReloadHandler", EVENT_PLAYER_ACTIVATED, function(_, initial)
-        if initial == false then
-            SendEvent()
-        end
-        EVENT_MANAGER:UnregisterForEvent("LGBUIReloadHandler", EVENT_PLAYER_ACTIVATED)
-    end)
-end
-
 function LibGroupBroadcast:Initialize()
     internal.gameApiWrapper = internal.class.GameApiWrapper:New(authKey, "LibGroupBroadcast", internal.callbackManager)
     SetupInstance(internal)
     internal.authKey = nil
-    InitializeUIReloadHandler()
     self.internal = nil
     self.Initialize = nil
 end
