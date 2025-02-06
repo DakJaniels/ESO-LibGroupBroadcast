@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2025 sirinsidiator
+--
+-- SPDX-License-Identifier: Artistic-2.0
+
 if not Taneth then return end
 local LGB = LibGroupBroadcast
 local GroupResources = LGB:GetHandler("GroupResources")

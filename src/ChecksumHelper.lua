@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2025 sirinsidiator
+--
+-- SPDX-License-Identifier: Artistic-2.0
+
 --- @class LibGroupBroadcastInternal
 local internal = LibGroupBroadcast.internal
 do
