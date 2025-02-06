@@ -14,25 +14,11 @@ LibGroupBroadcast = {
 }
 local internal = LibGroupBroadcast.internal
 
-function internal:RegisterHandler(handlerName)
-    local handler = self.handlers[handlerName]
-    if handler then
-        internal.logger:Warn("Handler '%s' has already been registered.", handlerName)
-        return nil
-    end
-
-    handler = {}
-    self.handlers[handlerName] = handler
-    return handler
-end
-
-function internal:GetHandler(handlerName)
-    return self.handlers[handlerName]
-end
-
 local function SetupInstance(instance)
     instance.dataMessageQueue = internal.class.MessageQueue:New()
-    instance.protocolManager = internal.class.ProtocolManager:New(instance.callbackManager, instance.dataMessageQueue)
+    instance.handlerManager = internal.class.HandlerManager:New()
+    instance.protocolManager = internal.class.ProtocolManager:New(instance.callbackManager, instance.dataMessageQueue,
+        instance.handlerManager)
     instance.broadcastManager = internal.class.BroadcastManager:New(instance.gameApiWrapper, instance.protocolManager,
         instance.callbackManager, instance.dataMessageQueue)
 end
@@ -45,20 +31,28 @@ function internal.SetupMockInstance()
     }, { __index = LibGroupBroadcast })
     SetupInstance(instance)
 
-    function instance:DeclareCustomEvent(eventId, eventName)
-        return instance.protocolManager:DeclareCustomEvent(eventId, eventName)
+    function instance:RegisterHandler(...)
+        return instance.handlerManager:RegisterHandler(...)
     end
 
-    function instance:RegisterForCustomEvent(eventName, callback)
-        return instance.protocolManager:RegisterForCustomEvent(eventName, callback)
+    function instance:GetHandler(...)
+        return instance.handlerManager:GetHandlerApi(...)
     end
 
-    function instance:UnregisterForCustomEvent(eventName, callback)
-        return instance.protocolManager:UnregisterForCustomEvent(eventName, callback)
+    function instance:DeclareCustomEvent(...)
+        return instance.protocolManager:DeclareCustomEvent(...)
     end
 
-    function instance:DeclareProtocol(protocolId, protocolName)
-        return instance.protocolManager:DeclareProtocol(protocolId, protocolName)
+    function instance:RegisterForCustomEvent(...)
+        return instance.protocolManager:RegisterForCustomEvent(...)
+    end
+
+    function instance:UnregisterForCustomEvent(...)
+        return instance.protocolManager:UnregisterForCustomEvent(...)
+    end
+
+    function instance:DeclareProtocol(...)
+        return instance.protocolManager:DeclareProtocol(...)
     end
 
     return instance

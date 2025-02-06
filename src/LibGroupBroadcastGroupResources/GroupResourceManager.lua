@@ -3,8 +3,8 @@ local GroupResources = LibGroupBroadcast:GetHandler("GroupResources")
 local GroupResourceManager = ZO_InitializingObject:Subclass()
 GroupResources.GroupResourceManager = GroupResourceManager
 
-function GroupResourceManager:Initialize(id, name, powerType, callbackManager, api)
-    local protocol = api:DeclareProtocol(id, name)
+function GroupResourceManager:Initialize(handlerId, id, name, powerType, callbackManager, api)
+    local protocol = api:DeclareProtocol(handlerId, id, name)
     assert(protocol, "Failed to declare protocol for " .. name)
 
     protocol:AddField(api.CreatePercentageField("percentage", {

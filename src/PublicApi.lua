@@ -5,8 +5,16 @@ function LGB.SetupMockInstance()
     return internal.SetupMockInstance()
 end
 
-function LGB:DeclareCustomEvent(eventId, eventName)
-    return internal.protocolManager:DeclareCustomEvent(eventId, eventName)
+function LGB:RegisterHandler(handlerName, addonName, handlerApi)
+    return internal.handlerManager:RegisterHandler(handlerName, addonName, handlerApi)
+end
+
+function LGB:GetHandler(handlerName)
+    return internal.handlerManager:GetHandlerApi(handlerName)
+end
+
+function LGB:DeclareCustomEvent(handlerId, eventId, eventName)
+    return internal.protocolManager:DeclareCustomEvent(handlerId, eventId, eventName)
 end
 
 function LGB:RegisterForCustomEvent(eventName, callback)
@@ -17,16 +25,8 @@ function LGB:UnregisterForCustomEvent(eventName, callback)
     return internal.protocolManager:UnregisterForCustomEvent(eventName, callback)
 end
 
-function LGB:DeclareProtocol(protocolId, protocolName)
-    return internal.protocolManager:DeclareProtocol(protocolId, protocolName)
-end
-
-function LGB:RegisterHandler(handlerName)
-    return internal:RegisterHandler(handlerName)
-end
-
-function LGB:GetHandler(handlerName)
-    return internal:GetHandler(handlerName)
+function LGB:DeclareProtocol(handlerId, protocolId, protocolName)
+    return internal.protocolManager:DeclareProtocol(handlerId, protocolId, protocolName)
 end
 
 function LGB.CreateFlagField(...)

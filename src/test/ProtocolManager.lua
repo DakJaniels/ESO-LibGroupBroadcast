@@ -1,54 +1,56 @@
 if not Taneth then return end
 local LGB = LibGroupBroadcast
 local ProtocolManager = LGB.internal.class.ProtocolManager
+local HandlerManager = LGB.internal.class.HandlerManager
 local Protocol = LGB.internal.class.Protocol
 local FlagField = LGB.internal.class.FlagField
 local NumericField = LGB.internal.class.NumericField
+local OptionalField = LGB.internal.class.OptionalField
 local MessageQueue = LGB.internal.class.MessageQueue
 local FixedSizeDataMessage = LGB.internal.class.FixedSizeDataMessage
 local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
 
+local function CreateProtocolManager()
+    local callbackManager = ZO_CallbackObject:New()
+    local dataMessageQueue = MessageQueue:New()
+    local handlerManager = HandlerManager:New()
+    local handlerId = handlerManager:RegisterHandler("test", "test")
+    return ProtocolManager:New(callbackManager, dataMessageQueue, handlerManager), handlerId
+end
+
 Taneth("LibGroupBroadcast", function()
     describe("ProtocolManager", function()
         it("should be able to create a new instance", function()
-            local callbackManager = ZO_CallbackObject:New()
-            local dataMessageQueue = MessageQueue:New()
-            local manager = ProtocolManager:New(callbackManager, dataMessageQueue)
+            local manager = CreateProtocolManager()
             assert.is_true(ZO_Object.IsInstanceOf(manager, ProtocolManager))
         end)
 
         it("should be able to declare multiple different custom events", function()
-            local callbackManager = ZO_CallbackObject:New()
-            local dataMessageQueue = MessageQueue:New()
-            local manager = ProtocolManager:New(callbackManager, dataMessageQueue)
-            local fireEvent1 = manager:DeclareCustomEvent(0, "test1")
-            local fireEvent2 = manager:DeclareCustomEvent(1, "test2")
+            local manager, handlerId = CreateProtocolManager()
+            local fireEvent1 = manager:DeclareCustomEvent(handlerId, 0, "test1")
+            local fireEvent2 = manager:DeclareCustomEvent(handlerId, 1, "test2")
             assert.equals(type(fireEvent1), "function")
             assert.equals(type(fireEvent2), "function")
         end)
 
         it("should not be able to declare the same custom event twice", function()
-            local callbackManager = ZO_CallbackObject:New()
-            local dataMessageQueue = MessageQueue:New()
-            local manager = ProtocolManager:New(callbackManager, dataMessageQueue)
-            local fireEvent1 = manager:DeclareCustomEvent(0, "test1")
-            local fireEvent2 = manager:DeclareCustomEvent(0, "test2")
-            local fireEvent3 = manager:DeclareCustomEvent(1, "test1")
+            local manager, handlerId = CreateProtocolManager()
+            local fireEvent1 = manager:DeclareCustomEvent(handlerId, 0, "test1")
+            local fireEvent2 = manager:DeclareCustomEvent(handlerId, 0, "test2")
+            local fireEvent3 = manager:DeclareCustomEvent(handlerId, 1, "test1")
             assert.equals(type(fireEvent1), "function")
             assert.is_nil(fireEvent2)
             assert.is_nil(fireEvent3)
         end)
 
         it("should be able to generate and handle custom events", function()
-            local callbackManager = ZO_CallbackObject:New()
-            local dataMessageQueue = MessageQueue:New()
-            local manager = ProtocolManager:New(callbackManager, dataMessageQueue)
-            local fireEvent1 = manager:DeclareCustomEvent(0, "test1")
-            local fireEvent2 = manager:DeclareCustomEvent(1, "test2")
-            local fireEvent3 = manager:DeclareCustomEvent(39, "test3")
+            local manager, handlerId = CreateProtocolManager()
+            local fireEvent1 = manager:DeclareCustomEvent(handlerId, 0, "test1")
+            local fireEvent2 = manager:DeclareCustomEvent(handlerId, 1, "test2")
+            local fireEvent3 = manager:DeclareCustomEvent(handlerId, 39, "test3")
 
             local triggered = 0
-            callbackManager:RegisterCallback("RequestSendData", function()
+            manager.callbackManager:RegisterCallback("RequestSendData", function()
                 triggered = triggered + 1
             end)
 
@@ -88,41 +90,35 @@ Taneth("LibGroupBroadcast", function()
         end)
 
         it("should be able to declare multiple different data protocols", function()
-            local callbackManager = ZO_CallbackObject:New()
-            local dataMessageQueue = MessageQueue:New()
-            local manager = ProtocolManager:New(callbackManager, dataMessageQueue)
-            local protocol1 = manager:DeclareProtocol(0, "test1")
-            local protocol2 = manager:DeclareProtocol(1, "test2")
+            local manager, handlerId = CreateProtocolManager()
+            local protocol1 = manager:DeclareProtocol(handlerId, 0, "test1")
+            local protocol2 = manager:DeclareProtocol(handlerId, 1, "test2")
             assert.is_true(ZO_Object.IsInstanceOf(protocol1, Protocol))
             assert.is_true(ZO_Object.IsInstanceOf(protocol2, Protocol))
         end)
 
         it("should not be able to declare the same data protocol twice", function()
-            local callbackManager = ZO_CallbackObject:New()
-            local dataMessageQueue = MessageQueue:New()
-            local manager = ProtocolManager:New(callbackManager, dataMessageQueue)
-            local protocol1 = manager:DeclareProtocol(0, "test1")
-            local protocol2 = manager:DeclareProtocol(0, "test2")
-            local protocol3 = manager:DeclareProtocol(1, "test1")
+            local manager, handlerId = CreateProtocolManager()
+            local protocol1 = manager:DeclareProtocol(handlerId, 0, "test1")
+            local protocol2 = manager:DeclareProtocol(handlerId, 0, "test2")
+            local protocol3 = manager:DeclareProtocol(handlerId, 1, "test1")
             assert.is_true(ZO_Object.IsInstanceOf(protocol1, Protocol))
             assert.is_nil(protocol2)
             assert.is_nil(protocol3)
         end)
 
         it("should be able to generate and handle data messages", function()
-            local callbackManager = ZO_CallbackObject:New()
-            local dataMessageQueue = MessageQueue:New()
-            local manager = ProtocolManager:New(callbackManager, dataMessageQueue)
+            local manager, handlerId = CreateProtocolManager()
 
             local triggered = 0
-            callbackManager:RegisterCallback("RequestSendData", function()
+            manager.callbackManager:RegisterCallback("RequestSendData", function()
                 triggered = triggered + 1
             end)
 
             local protocol1IncomingUnitTag, protocol1IncomingData
             local protocol2IncomingUnitTag, protocol2IncomingData
 
-            local protocol1 = manager:DeclareProtocol(0, "test1")
+            local protocol1 = manager:DeclareProtocol(handlerId, 0, "test1")
             protocol1:AddField(FlagField:New("flagA"))
             protocol1:AddField(FlagField:New("flagB"))
             protocol1:OnData(function(unitTag, data)
@@ -131,7 +127,7 @@ Taneth("LibGroupBroadcast", function()
             end)
             protocol1:Finalize()
 
-            local protocol2 = manager:DeclareProtocol(1, "test2")
+            local protocol2 = manager:DeclareProtocol(handlerId, 1, "test2")
             protocol2:AddField(FlagField:New("flagC"))
             protocol2:AddField(NumericField:New("number"))
             protocol2:OnData(function(unitTag, data)
@@ -142,13 +138,13 @@ Taneth("LibGroupBroadcast", function()
 
             assert.is_true(protocol1:Send({ flagA = true, flagB = false }))
             assert.equals(1, triggered)
-            local message1 = dataMessageQueue:DequeueMessage()
+            local message1 = manager.dataMessageQueue:DequeueMessage()
             assert.is_true(ZO_Object.IsInstanceOf(message1, FixedSizeDataMessage))
             message1.data:Rewind()
 
             assert.is_true(protocol2:Send({ flagC = true, number = 1 }))
             assert.equals(2, triggered)
-            local message2 = dataMessageQueue:DequeueMessage()
+            local message2 = manager.dataMessageQueue:DequeueMessage()
             assert.is_true(ZO_Object.IsInstanceOf(message2, FlexSizeDataMessage))
             message2.data:Rewind()
 

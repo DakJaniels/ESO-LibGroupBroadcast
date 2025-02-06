@@ -8,16 +8,20 @@ local CUSTOM_EVENT_CALLBACK_PREFIX = "OnCustomEvent_"
 local ProtocolManager = ZO_InitializingObject:Subclass()
 LGB.internal.class.ProtocolManager = ProtocolManager
 
-function ProtocolManager:Initialize(callbackManager, dataMessageQueue)
+function ProtocolManager:Initialize(callbackManager, dataMessageQueue, handlerManager)
     self.callbackManager = callbackManager
     self.dataMessageQueue = dataMessageQueue
+    self.handlerManager = handlerManager
     self.customEvents = {}
     self.customEventOptions = {}
     self.pendingCustomEvents = {}
     self.protocols = {}
 end
 
-function ProtocolManager:DeclareCustomEvent(eventId, eventName, options)
+function ProtocolManager:DeclareCustomEvent(handlerId, eventId, eventName, options)
+    local handler = self.handlerManager:GetHandler(handlerId)
+    assert(handler, "Handler not found.")
+
     CustomEventControlMessage.AssertIsValidEventId(eventId)
     assert(type(eventName) == "string", "eventName must be a string.")
 
@@ -37,6 +41,7 @@ function ProtocolManager:DeclareCustomEvent(eventId, eventName, options)
     self.customEventOptions[eventId] = options or {}
     assert(type(self.customEventOptions[eventId]) == "table", "options must be a table.")
 
+    handler.customEvents[#handler.customEvents + 1] = { eventId, eventName }
     return function()
         self.pendingCustomEvents[eventId] = true
         self.callbackManager:FireCallbacks("RequestSendData")
@@ -106,7 +111,9 @@ function ProtocolManager:HandleCustomEventMessages(unitTag, messages)
     return unhandledMessages
 end
 
-function ProtocolManager:DeclareProtocol(protocolId, protocolName)
+function ProtocolManager:DeclareProtocol(handlerId, protocolId, protocolName)
+    local handler = self.handlerManager:GetHandler(handlerId)
+    assert(handler, "Handler not found.")
     assert(type(protocolId) == "number", "protocolId must be a number.")
     assert(type(protocolName) == "string", "protocolName must be a string.")
 
@@ -124,6 +131,7 @@ function ProtocolManager:DeclareProtocol(protocolId, protocolName)
     local protocol = Protocol:New(protocolId, protocolName, self)
     protocols[protocolId] = protocol
     protocols[protocolName] = protocol
+    handler.protocols[#handler.protocols + 1] = { protocolId, protocolName }
     return protocol
 end
 

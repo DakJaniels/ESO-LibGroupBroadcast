@@ -7,7 +7,8 @@ local GroupResourceManager = GroupResources.GroupResourceManager
 local function SetupHandler(id, name, powerType)
     local api = SetupMockInstance()
     local callbackManager = ZO_CallbackObject:New()
-    local handler = GroupResourceManager:New(id, name, powerType, callbackManager, api)
+    local handlerId = api:RegisterHandler("test", "test")
+    local handler = GroupResourceManager:New(handlerId, id, name, powerType, callbackManager, api)
     return handler, api
 end
 

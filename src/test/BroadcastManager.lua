@@ -1,6 +1,7 @@
 if not Taneth then return end
 local LGB = LibGroupBroadcast
 local ProtocolManager = LGB.internal.class.ProtocolManager
+local HandlerManager = LGB.internal.class.HandlerManager
 local MockGameApiWrapper = LGB.internal.class.MockGameApiWrapper
 local BroadcastManager = LGB.internal.class.BroadcastManager
 local MessageQueue = LGB.internal.class.MessageQueue
@@ -13,12 +14,14 @@ local PercentageField = LGB.internal.class.PercentageField
 local function SetupBroadcastManager()
     local callbackManager = ZO_CallbackObject:New()
     local dataMessageQueue = MessageQueue:New()
+    local handlerManager = HandlerManager:New()
     local gameApiWrapper = MockGameApiWrapper:New(callbackManager)
-    local protocolManager = ProtocolManager:New(callbackManager, dataMessageQueue)
+    local protocolManager = ProtocolManager:New(callbackManager, dataMessageQueue, handlerManager)
     local broadcastManager = BroadcastManager:New(gameApiWrapper, protocolManager, callbackManager, dataMessageQueue)
     return {
         callbackManager = callbackManager,
         dataMessageQueue = dataMessageQueue,
+        handlerManager = handlerManager,
         gameApiWrapper = gameApiWrapper,
         protocolManager = protocolManager,
         broadcastManager = broadcastManager,
@@ -47,7 +50,9 @@ Taneth("LibGroupBroadcast", function()
             end)
 
             local outgoingData = { text = string.rep("a", 255) }
-            local protocol = internal.protocolManager:DeclareProtocol(0, "test")
+            local handlerId = internal.handlerManager:RegisterHandler("test", "test")
+            local protocol = internal.protocolManager:DeclareProtocol(handlerId, 0, "test")
+            assert.is_not_nil(protocol)
             protocol:AddField(StringField:New("text"))
             protocol:OnData(function(unitTag, data)
                 assert.same(outgoingData, data)
@@ -79,13 +84,14 @@ Taneth("LibGroupBroadcast", function()
                 }
             }
 
-            local protocol = internal.protocolManager:DeclareProtocol(0, "test")
+            local handlerId = internal.handlerManager:RegisterHandler("test", "test")
+            local protocol = internal.protocolManager:DeclareProtocol(handlerId, 0, "test")
             protocol:AddField(ArrayField:New(TableField:New("test", {
                 NumericField:New("numberA"),
                 NumericField:New("numberB"),
                 NumericField:New("numberC"),
                 NumericField:New("numberD")
-            }), { minSize = 1, maxSize = 8 }))
+            }), { minLength = 1, maxLength = 8 }))
             protocol:OnData(function(unitTag, data)
                 assert.same(outgoingData, data)
                 assert.equals("player", unitTag)
@@ -113,14 +119,15 @@ Taneth("LibGroupBroadcast", function()
                 done()
             end
 
-            local FireEvent1 = protocolManager:DeclareCustomEvent(0, "testEvent1")
+            local handlerId = internal.handlerManager:RegisterHandler("test", "test")
+            local FireEvent1 = protocolManager:DeclareCustomEvent(handlerId, 0, "testEvent1")
             protocolManager:RegisterForCustomEvent("testEvent1", function(unitTag)
                 assert.equals("player", unitTag)
                 received.testEvent1 = true
                 FinishTest()
             end)
 
-            local FireEvent2 = protocolManager:DeclareCustomEvent(5, "testEvent2")
+            local FireEvent2 = protocolManager:DeclareCustomEvent(handlerId, 5, "testEvent2")
             protocolManager:RegisterForCustomEvent("testEvent2", function(unitTag)
                 assert.equals("player", unitTag)
                 received.testEvent2 = true
@@ -135,7 +142,7 @@ Taneth("LibGroupBroadcast", function()
                 percentage = 1
             }
 
-            local protocol1 = protocolManager:DeclareProtocol(0, "test1")
+            local protocol1 = protocolManager:DeclareProtocol(handlerId, 0, "test1")
             protocol1:AddField(StringField:New("text"))
             protocol1:AddField(NumericField:New("number"))
             protocol1:OnData(function(unitTag, data)
@@ -146,7 +153,7 @@ Taneth("LibGroupBroadcast", function()
             end)
             assert.is_true(protocol1:Finalize())
 
-            local protocol2 = protocolManager:DeclareProtocol(1, "test2")
+            local protocol2 = protocolManager:DeclareProtocol(handlerId, 1, "test2")
             protocol2:AddField(PercentageField:New("percentage"))
             protocol2:OnData(function(unitTag, data)
                 assert.same(outgoingData2, data)

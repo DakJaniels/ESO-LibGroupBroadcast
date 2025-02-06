@@ -43,6 +43,7 @@ FrameHandler.lua
 ProtocolManager.lua
 GameApiWrapper.lua
 BroadcastManager.lua
+HandlerManager.lua
 
 test/MockGameApiWrapper.lua
 test/game.lua
@@ -52,6 +53,7 @@ test/MessageQueue.lua
 test/FrameHandler.lua
 test/ProtocolManager.lua
 test/BroadcastManager.lua
+test/HandlerManager.lua
 test/messages/CustomEventControlMessage.lua
 test/messages/ControlMessageCountMessage.lua
 test/messages/FixedSizeDataMessage.lua

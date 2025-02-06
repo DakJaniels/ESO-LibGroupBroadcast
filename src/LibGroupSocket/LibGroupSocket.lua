@@ -57,7 +57,8 @@ end
 
 --------------------------------------------------- LibGroupBroadcast -------------------------------------------------
 local LGB = LibGroupBroadcast
-local protocol = LGB:DeclareProtocol(0, "LibGroupSocket")
+local handlerId = LGB:RegisterHandler("LibGroupSocketLegacyLayer", "LibGroupSocket")
+local protocol = LGB:DeclareProtocol(handlerId, 0, "LibGroupSocket")
 assert(protocol, "Failed to declare LibGroupSocket legacy protocol")
 
 local CreateNumericField = LGB.CreateNumericField
