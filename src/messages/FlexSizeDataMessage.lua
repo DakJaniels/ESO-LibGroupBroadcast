@@ -77,10 +77,12 @@ function FlexSizeDataMessage:Serialize(buffer)
     buffer:WriteBit(self.hasContinuation)
     local length = self.bytesToSend * 8
     local offset = self.bytesSent * 8 - length + 1
-    local availableBits = math.min(self.data:GetNumBits(), length)
+    local availableBits = math.min(self.data:GetNumBits() - (offset - 1), length)
     buffer:WriteBuffer(self.data, availableBits, offset)
     local remainingBits = math.max(0, length - availableBits)
-    buffer:Seek(remainingBits)
+    if remainingBits > 0 then
+        buffer:Seek(remainingBits)
+    end
 end
 
 function FlexSizeDataMessage.Deserialize(buffer)
