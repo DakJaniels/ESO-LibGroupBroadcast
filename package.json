@@ -3,6 +3,7 @@
         "ts-node": "^10.9.2"
     },
     "scripts": {
+        "test": "Taneth ../LibDebugLogger/src/LibDebugLogger.txt src/LibGroupBroadcast.txt src/LibGroupBroadcastGroupResources/LibGroupBroadcastGroupResources.txt src/LibGroupBroadcastUIReload/LibGroupBroadcastUIReload.txt LibGroupBroadcast LibGroupBroadcastGroupResources LibGroupBroadcastUIReload",
         "doc": "ts-node doc/generateApiReference.ts && ts-node doc/generateApiDoc.ts"
     }
 }
