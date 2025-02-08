@@ -2,3 +2,6 @@
 /temp
 /unused
 .history
+node_modules
+/doc/doc.*
+/doc/*.log

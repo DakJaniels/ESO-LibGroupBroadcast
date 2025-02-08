@@ -7,12 +7,14 @@ local LGB = LibGroupBroadcast
 local FrameHandler = LGB.internal.class.FrameHandler
 local logger = LGB.internal.logger
 
+local CURRENT_VERSION = 1
+
+--[[ doc.lua begin ]]--
+
 --- @class BroadcastManager
 --- @field New fun(self: BroadcastManager, gameApiWrapper: GameApiWrapper, protocolManager: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue): BroadcastManager
 local BroadcastManager = ZO_InitializingObject:Subclass()
 LGB.internal.class.BroadcastManager = BroadcastManager
-
-local CURRENT_VERSION = 1
 
 function BroadcastManager:Initialize(gameApiWrapper, protocolManager, callbackManager, dataMessageQueue)
     self.gameApiWrapper = gameApiWrapper
@@ -49,6 +51,7 @@ function BroadcastManager:RequestSendData()
     end, delay)
 end
 
+--[[ doc.lua end ]]--
 local function AddMessage(message, frameHandler, toRequeue)
     if not message then return false end
     if frameHandler:AddDataMessage(message) then
@@ -60,6 +63,7 @@ local function AddMessage(message, frameHandler, toRequeue)
     end
     return true
 end
+--[[ doc.lua begin ]]--
 
 function BroadcastManager:FillSendBuffer(inCombat)
     local frameHandler = self.frameHandler[CURRENT_VERSION]

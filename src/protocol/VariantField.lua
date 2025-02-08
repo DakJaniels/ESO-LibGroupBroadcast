@@ -8,20 +8,27 @@ local FieldBase = LGB.internal.class.FieldBase
 local EnumField = LGB.internal.class.EnumField
 local logger = LGB.internal.logger
 
+local AVAILABLE_OPTIONS = {
+    maxNumVariants = true,
+    numBits = true,
+}
+
+--[[ doc.lua begin ]]--
+
+--- @docType options
 --- @class VariantFieldOptions: FieldOptionsBase
 --- @field defaultValue table? The default value for the field.
 --- @field maxNumVariants number? The maximum number of variants that can be used. Can be used to reserve space for future variants.
 --- @field numBits number? The number of bits to use for the amount of variants. Can be used to reserve additional space to allow for future variants.
 
+--- @docType hidden
 --- @class VariantField: FieldBase
+--- @field protected labelField EnumField
+--- @field protected variants FieldBase[]
+--- @field protected variantByLabel table<string, FieldBase>
 --- @field New fun(self: VariantField, label: string, variants: FieldBase[], options?: VariantFieldOptions): VariantField
 local VariantField = FieldBase:Subclass()
 LGB.internal.class.VariantField = VariantField
-
-local AVAILABLE_OPTIONS = {
-    maxNumVariants = true,
-    numBits = true,
-}
 
 --- @protected
 function VariantField:Initialize(label, variants, options)

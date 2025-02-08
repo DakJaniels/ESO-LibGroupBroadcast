@@ -7,6 +7,9 @@ local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
 local logger = LGB.internal.logger
 
+--[[ doc.lua begin ]]--
+
+--- @docType options
 --- @class NumericFieldOptions: FieldOptionsBase
 --- @field defaultValue number? The default value for the field
 --- @field numBits number? The number of bits to use for the field. If not provided, it will be calculated based on the value range.
@@ -15,12 +18,18 @@ local logger = LGB.internal.logger
 --- @field precision number? The precision to use when sending the value. Will be used to divide the value before sending and multiply it after receiving. If not provided, the value will be sent as is.
 --- @field trimValues boolean? Whether to trim values to the range. If not provided, send will fail with a warning when the value is out of range.
 
+--- @docType hidden
 --- @class NumericField: FieldBase
+--- @field protected minValue number
+--- @field protected maxValue number
+--- @field protected maxSendValue number
+--- @field protected numBits number
+--- @field protected options NumericFieldOptions
 --- @field New fun(self: NumericField, label: string, options?: NumericFieldOptions): NumericField
---- @field options NumericFieldOptions
 local NumericField = FieldBase:Subclass()
 LGB.internal.class.NumericField = NumericField
 
+--[[ doc.lua end ]]--
 local MIN_SUPPORTED_VALUE = 0
 local MAX_SUPPORTED_VALUE = 2 ^ 32 - 1
 local AVAILABLE_OPTIONS = {
@@ -52,8 +61,10 @@ local function ApplyPrecision(value, precision)
         return Round(value * (1 / precision))
     end
 end
+--[[ doc.lua begin ]]--
 
 --- Initializes a new NumericField object.
+--- @protected
 --- @param label string The label of the field.
 --- @param options NumericFieldOptions Optional configuration for the field.
 --- @see NumericFieldOptions

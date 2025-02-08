@@ -6,6 +6,8 @@
 local LGB = LibGroupBroadcast
 local logger = LGB.internal.logger
 
+--[[ doc.lua begin ]]--
+
 --- @class HandlerManager
 --- @field New fun(self: HandlerManager): HandlerManager
 local HandlerManager = ZO_InitializingObject:Subclass()

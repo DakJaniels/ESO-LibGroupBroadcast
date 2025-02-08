@@ -5,7 +5,12 @@
 --- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 
+--[[ doc.lua begin ]]--
+
 --- @class BinaryBuffer
+--- @field protected bytes table<number> The bytes of the buffer.
+--- @field protected bitLength number The number of bits in the buffer.
+--- @field protected cursor number The current cursor position.
 --- @field New fun(self: BinaryBuffer, numBits: number): BinaryBuffer
 local BinaryBuffer = ZO_InitializingObject:Subclass()
 LGB.internal.class.BinaryBuffer = BinaryBuffer
@@ -17,6 +22,7 @@ local function GetIndices(cursor)
 end
 
 --- Initializes a new BinaryBuffer with the specified number of bits.
+--- @protected
 --- @param numBits number The number of bits the buffer should have. Has to be a positive number.
 function BinaryBuffer:Initialize(numBits)
     assert(type(numBits) == "number" and numBits > 0, "numBits must be a positive number")
@@ -80,7 +86,7 @@ function BinaryBuffer:WriteBit(value)
 end
 
 --- Writes an unsigned integer to the buffer.
---- @param value number The value to write. Must be a non-negative number less than 2^numBits.
+--- @param value number The value to write. Must be a non-negative number and fit in the specified number of bits.
 --- @param numBits number The number of bits to write. Must be a positive number.
 function BinaryBuffer:WriteUInt(value, numBits)
     assert(type(value) == "number" and value >= 0, "Value must be a non-negative number")

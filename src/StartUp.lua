@@ -7,6 +7,7 @@ if not authKey then
     error("Data broadcast auth key has already been claimed by " .. addonName)
 end
 
+--- @docType hidden
 --- @class LibGroupBroadcastInternal
 --- @field logger LibDebugLogger
 --- @field callbackManager ZO_CallbackObject
@@ -41,6 +42,8 @@ local function SetupInstance(instance)
         instance.callbackManager, instance.dataMessageQueue)
 end
 
+--[[ doc.lua begin ]]--
+--- @docType hidden
 --- @class LibGroupBroadcastMockInstance : LibGroupBroadcast
 --- @field callbackManager ZO_CallbackObject
 --- @field gameApiWrapper MockGameApiWrapper
@@ -48,6 +51,7 @@ end
 --- @field handlerManager HandlerManager
 --- @field protocolManager ProtocolManager
 --- @field broadcastManager BroadcastManager
+--[[ doc.lua end ]]--
 
 --- @return LibGroupBroadcastMockInstance
 function internal.SetupMockInstance()

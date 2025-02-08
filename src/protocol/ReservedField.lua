@@ -10,11 +10,15 @@ local AVAILABLE_OPTIONS = {
     numBits = true,
 }
 
+--[[ doc.lua begin ]]--
+
+--- @docType hidden
 --- @class ReservedField: FieldBase
 --- @field New fun(self: ReservedField, label: string, numBits: number): ReservedField
 local ReservedField = FieldBase:Subclass()
 LGB.internal.class.ReservedField = ReservedField
 
+--- @protected
 function ReservedField:Initialize(label, numBits)
     self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     FieldBase.Initialize(self, label, { numBits = numBits })

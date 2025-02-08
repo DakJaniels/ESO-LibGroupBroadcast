@@ -8,22 +8,27 @@ local FieldBase = LGB.internal.class.FieldBase
 local NumericField = LGB.internal.class.NumericField
 local logger = LGB.internal.logger
 
---- @class EnumFieldOptions: FieldOptionsBase
---- @field maxValue number? The max value of the field. Defaults to the length of the valueTable. Can be used to reserve space for future values.
---- @field numBits number? The number of bits to use for the field. Can be used to reserve a specific number of bits for future values.
-
---- @class EnumField: FieldBase
---- @field New fun(self: EnumField, label: string, valueTable: any[], options?: EnumFieldOptions): EnumField
-local EnumField = FieldBase:Subclass()
-LGB.internal.class.EnumField = EnumField
-
 local AVAILABLE_OPTIONS = {
     numBits = true,
 }
 
---- @param label string
---- @param valueTable table
---- @param options EnumFieldOptions
+--[[ doc.lua begin ]]--
+
+--- @docType options
+--- @class EnumFieldOptions: FieldOptionsBase
+--- @field maxValue number? The max value of the field. Defaults to the length of the valueTable. Can be used to reserve space for future values.
+--- @field numBits number? The number of bits to use for the field. Can be used to reserve a specific number of bits for future values.
+
+--- @docType hidden
+--- @class EnumField: FieldBase
+--- @field protected indexField NumericField
+--- @field protected valueTable any[]
+--- @field protected valueLookup table
+--- @field New fun(self: EnumField, label: string, valueTable: any[], options?: EnumFieldOptions): EnumField
+local EnumField = FieldBase:Subclass()
+LGB.internal.class.EnumField = EnumField
+
+--- @protected
 function EnumField:Initialize(label, valueTable, options)
     self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     FieldBase.Initialize(self, label, options)

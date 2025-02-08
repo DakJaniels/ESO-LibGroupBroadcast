@@ -5,6 +5,21 @@
 --- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 
+local function byTimeAddedDesc(a, b)
+    return a:GetLastAdded() > b:GetLastAdded()
+end
+
+local function bySizeDescAndTimeAddedDesc(a, b)
+    local aSize = a:GetSize()
+    local bSize = b:GetSize()
+    if aSize == bSize then
+        return a:GetLastAdded() > b:GetLastAdded()
+    end
+    return aSize > bSize
+end
+
+--[[ doc.lua begin ]]--
+
 --- @class MessageQueue
 --- @field New fun(self: MessageQueue): MessageQueue
 local MessageQueue = ZO_InitializingObject:Subclass()
@@ -58,19 +73,6 @@ function MessageQueue:HasRelevantMessages(inCombat)
     else
         return #self.messages > 0
     end
-end
-
-local function byTimeAddedDesc(a, b)
-    return a:GetLastAdded() > b:GetLastAdded()
-end
-
-local function bySizeDescAndTimeAddedDesc(a, b)
-    local aSize = a:GetSize()
-    local bSize = b:GetSize()
-    if aSize == bSize then
-        return a:GetLastAdded() > b:GetLastAdded()
-    end
-    return aSize > bSize
 end
 
 function MessageQueue:GetOldestRelevantMessage(inCombat)

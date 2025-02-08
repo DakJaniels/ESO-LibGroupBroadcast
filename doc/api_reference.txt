@@ -1,0 +1,514 @@
+[SIZE="3"]LibGroupBroadcast[/SIZE]
+[INDENT]
+    [SIZE="2"]RegisterHandler[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) LibGroupBroadcast:RegisterHandler(handlerName: string, addonName: string, handlerApi?: table)
+  -> handlerId: number|nil
+        [/highlight]
+ Registers a handler under a unique name. A handler in this context is a library or addon that uses one or more protocols or custom events for communication.
+
+[I]@param[/I] [B]handlerName[/B] — The name of the handler to register.
+[I]@param[/I] [B]addonName[/B] — The name of the addon or library that is registering the handler.
+[I]@param[/I] [B]handlerApi[/B] — The handler table to register. Should provide some api for addon authors to interact with. Can be nil if the handler api is private or should be accessed via other means.
+[I]@return[/I] [B]handlerId[/B] — An identifier for the handler to declare protocols and custom events with or nil if the registration failed.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/PublicApi.lua#L25']LibGroupBroadcast.GetHandler[/URL]
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]GetHandler[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) LibGroupBroadcast:GetHandler(handlerName: string)
+  -> handler: table
+        [/highlight]
+ Returns a handler's api by its unique name, if it is public.
+
+[I]@param[/I] [B]handlerName[/B] — The name of the handler to get.
+[I]@return[/I] [B]handler[/B] — The handler table that was registered with the given name.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/PublicApi.lua#L17']LibGroupBroadcast.RegisterHandler[/URL]
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]DeclareCustomEvent[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) LibGroupBroadcast:DeclareCustomEvent(handlerId: number, eventId: number, eventName: string)
+  -> FireEvent: function|nil
+        [/highlight]
+ This function declares a custom event that can be used to send messages without data to other group members with minimal overhead.
+ Each event id and event name has to be globally unique between all addons. In order to coordinate which values are already in use,
+ every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
+ https://wiki.esoui.com/LibGroupBroadcast_IDs
+
+[I]@param[/I] [B]handlerId[/B] — The ID of the handler this custom event should be associated with.
+[I]@param[/I] [B]eventId[/B] — The custom event ID to use.
+[I]@param[/I] [B]eventName[/B] — The custom event name to use.
+[I]@return[/I] [B]FireEvent[/B] — A function that can be called to request sending this custom event to other group members or nil if the declaration failed.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]RegisterForCustomEvent[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) LibGroupBroadcast:RegisterForCustomEvent(eventName: string, callback: fun(unitTag: string))
+  -> success: boolean
+        [/highlight]
+ Registers a callback function to be called when a custom event is received.
+
+[I]@param[/I] [B]eventName[/B] — The custom event name to register for.
+[I]@param[/I] [B]callback[/B] — The callback function to call when the custom event is received. Receives the unitTag of the sender as an argument.
+[I]@return[/I] [B]success[/B] — True if the callback was successfully registered, false otherwise.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]UnregisterForCustomEvent[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) LibGroupBroadcast:UnregisterForCustomEvent(eventName: string, callback: fun(unitTag: string))
+  -> success: boolean
+        [/highlight]
+ Unregisters a callback function from a custom event.
+
+[I]@param[/I] [B]eventName[/B] — The custom event name to unregister from.
+[I]@param[/I] [B]callback[/B] — The callback function to unregister. Has to be the same instance as the one registered.
+[I]@return[/I] [B]success[/B] — True if the callback was successfully unregistered, false otherwise.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]DeclareProtocol[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) LibGroupBroadcast:DeclareProtocol(handlerId: number, protocolId: number, protocolName: string)
+  -> protocol: Protocol|nil
+        [/highlight]
+ Declares a new protocol with the given ID and name and returns the Protocol object instance.
+
+ The protocol id and name have to be globally unique between all addons. In order to coordinate which values are already in use,
+ every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
+ https://wiki.esoui.com/LibGroupBroadcast_IDs
+
+[I]@param[/I] [B]handlerId[/B] — The ID of the handler this custom event should be associated with.
+[I]@param[/I] [B]protocolId[/B] — The ID of the protocol to declare.
+[I]@param[/I] [B]protocolName[/B] — The name of the protocol to declare.
+[I]@return[/I] [B]protocol[/B] — The Protocol object instance that was declared or nil if the declaration failed.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/Protocol.lua#L20']Protocol[/URL]
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreateArrayField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreateArrayField(valueField: FieldBase, options?: ArrayFieldOptions)
+  -> field: ArrayField
+        [/highlight]
+ Creates and returns an ArrayField, which can be used to send the passed field multiple times.
+ Internally this will use a NumericField to store the length of the array and then serialize the values using the passed field.
+ By default the array can have up to 255 elements, but this can be changed using the options table.
+
+[I]@param[/I] [B]valueField[/B] — The field that should be used for the values in the array.
+[I]@param[/I] [B]options[/B] — The options table to use for the field.
+[I]@return[/I] [B]field[/B] — The created ArrayField instance.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/ArrayField.lua#L26']ArrayField[/URL]
+[/LIST]
+
+Options:
+[LIST]
+    [*][B]minLength[/B] - [I]number[/I] - The minimum length of the array.
+    [*][B]maxLength[/B] - [I]number[/I] - The maximum length of the array.
+    [*][B]defaultValue[/B] - [I]table[/I] - The default value for the field.
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreateEnumField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreateEnumField(label: string, valueTable: any[], options?: EnumFieldOptions)
+  -> field: EnumField
+        [/highlight]
+ Creates and returns an instance of the EnumField class.
+
+[I]@param[/I] [B]label[/B] — The label of the field.
+[I]@param[/I] [B]valueTable[/B] — The array containing the possible values for the field.
+[I]@param[/I] [B]options[/B] — The options table to use for the field.
+[I]@return[/I] [B]field[/B] — The created EnumField instance.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/EnumField.lua#L23']EnumField[/URL]
+[/LIST]
+
+Options:
+[LIST]
+    [*][B]maxValue[/B] - [I]number[/I] - The max value of the field. Defaults to the length of the valueTable. Can be used to reserve space for future values.
+    [*][B]numBits[/B] - [I]number[/I] - The number of bits to use for the field. Can be used to reserve a specific number of bits for future values.
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreateFlagField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreateFlagField(label: string, options?: FlagFieldOptions)
+  -> field: FlagField
+        [/highlight]
+ Creates and returns an instance of the FlagField class.
+
+[I]@param[/I] [B]label[/B] — The label of the field.
+[I]@param[/I] [B]options[/B] — The options table to use for the field.
+[I]@return[/I] [B]field[/B] — The created FlagField instance.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/FlagField.lua#L17']FlagField[/URL]
+[/LIST]
+
+Options:
+[LIST]
+    [*][B]defaultValue[/B] - [I]boolean[/I] - The default value for the field.
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreateNumericField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreateNumericField(label: string, options?: NumericFieldOptions)
+  -> field: NumericField
+        [/highlight]
+ Creates and returns an instance of the NumericField class.
+
+[I]@param[/I] [B]label[/B] — The label of the field.
+[I]@param[/I] [B]options[/B] — The options table to use for the field.
+[I]@return[/I] [B]field[/B] — The created NumericField instance.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/NumericField.lua#L22']NumericField[/URL]
+[/LIST]
+
+Options:
+[LIST]
+    [*][B]defaultValue[/B] - [I]number[/I] - The default value for the field
+    [*][B]numBits[/B] - [I]number[/I] - The number of bits to use for the field. If not provided, it will be calculated based on the value range.
+    [*][B]minValue[/B] - [I]number[/I] - The minimum value that can be sent. If not provided, it will be calculated based on the number of bits and maxValue.
+    [*][B]maxValue[/B] - [I]number[/I] - The maximum value that can be sent. If not provided, it will be calculated based on the number of bits and minValue.
+    [*][B]precision[/B] - [I]number[/I] - The precision to use when sending the value. Will be used to divide the value before sending and multiply it after receiving. If not provided, the value will be sent as is.
+    [*][B]trimValues[/B] - [I]boolean[/I] - Whether to trim values to the range. If not provided, send will fail with a warning when the value is out of range.
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreateOptionalField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreateOptionalField(valueField: FieldBase)
+  -> field: OptionalField
+        [/highlight]
+ Creates and returns an instance of the OptionalField class.
+
+[I]@param[/I] [B]valueField[/B] — The field that should be made optional.
+[I]@return[/I] [B]field[/B] — The created OptionalField instance.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/OptionalField.lua#L13']OptionalField[/URL]
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreatePercentageField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreatePercentageField(label: string, options?: PercentageFieldOptions)
+  -> field: PercentageField
+        [/highlight]
+ Creates and returns an instance of the PercentageField class.
+
+[I]@param[/I] [B]label[/B] — The label of the field.
+[I]@param[/I] [B]options[/B] — The options table to use for the field.
+[I]@return[/I] [B]field[/B] — The created PercentageField instance.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/PercentageField.lua#L17']PercentageField[/URL]
+[/LIST]
+
+Options:
+[LIST]
+    [*][B]defaultValue[/B] - [I]number[/I] - The default value for the field. Must be between 0 and 1.
+    [*][B]numBits[/B] - [I]number[/I] - The number of bits to use for the percentage.
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreateReservedField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreateReservedField(label: string, numBits: number)
+  -> field: ReservedField
+        [/highlight]
+ Creates and returns an instance of the ReservedField class.
+
+[I]@param[/I] [B]label[/B] — The label of the field.
+[I]@param[/I] [B]numBits[/B] — The number of bits to reserve.
+[I]@return[/I] [B]field[/B] — The created ReservedField instance.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/ReservedField.lua#L16']ReservedField[/URL]
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreateStringField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreateStringField(label: string, options?: StringFieldOptions)
+  -> field: StringField
+        [/highlight]
+ Creates and returns an instance of the StringField class.
+
+[I]@param[/I] [B]label[/B] — The label of the field.
+[I]@param[/I] [B]options[/B] — The options table to use for the field.
+[I]@return[/I] [B]field[/B] — The created StringField instance.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/StringField.lua#L29']StringField[/URL]
+[/LIST]
+
+Options:
+[LIST]
+    [*][B]characters[/B] - [I]string[/I] - The characters to use for the string. If not provided, the string will be treated as a sequence of bytes.
+    [*][B]minLength[/B] - [I]number[/I] - The minimum length of the string. Defaults to 0.
+    [*][B]maxLength[/B] - [I]number[/I] - The maximum length of the string. Defaults to 255.
+    [*][B]defaultValue[/B] - [I]string[/I] - The default value for the field.
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreateTableField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreateTableField(label: string, valueFields: FieldBase[], options?: TableFieldOptions)
+  -> field: TableField
+        [/highlight]
+ Creates and returns an instance of the TableField class.
+
+[I]@param[/I] [B]label[/B] — The label of the field.
+[I]@param[/I] [B]valueFields[/B] — A list of fields contained in the table.
+[I]@param[/I] [B]options[/B] — The options table to use for the field.
+[I]@return[/I] [B]field[/B] — The created TableField instance.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/TableField.lua#L17']TableField[/URL]
+[/LIST]
+
+Options:
+[LIST]
+    [*][B]defaultValue[/B] - [I]table[/I] - The default value for the field.
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreateVariantField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreateVariantField(label: string, variants: FieldBase[], options?: VariantFieldOptions)
+  -> field: VariantField
+        [/highlight]
+ Creates and returns an instance of the VariantField class.
+
+[I]@param[/I] [B]label[/B] — The label of the field.
+[I]@param[/I] [B]variants[/B] — A list of fields that can be used as variants.
+[I]@param[/I] [B]options[/B] — The options table to use for the field.
+[I]@return[/I] [B]field[/B] — The created VariantField instance.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/VariantField.lua#L25']VariantField[/URL]
+[/LIST]
+
+Options:
+[LIST]
+    [*][B]defaultValue[/B] - [I]table[/I] - The default value for the field.
+    [*][B]maxNumVariants[/B] - [I]number[/I] - The maximum number of variants that can be used. Can be used to reserve space for future variants.
+    [*][B]numBits[/B] - [I]number[/I] - The number of bits to use for the amount of variants. Can be used to reserve additional space to allow for future variants.
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]CreateFieldBaseSubclass[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.CreateFieldBaseSubclass()
+  -> subclass: <T:FieldBase>
+        [/highlight]
+ Creates a subclass of the FieldBase class. Can be used to create custom field types.
+
+[I]@return[/I] [B]subclass[/B] — The created FieldBase subclass.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/FieldBase.lua#L19']FieldBase[/URL]
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]SetupMockInstance[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+function LibGroupBroadcast.SetupMockInstance()
+  -> LibGroupBroadcastMockInstance
+        [/highlight]
+ Creates a new separate instance of the LibGroupBroadcast library for use in Taneth tests.
+
+ The returned table has the same API as the global LibGroupBroadcast table, but is not connected to the global state.
+ It also contains references to some internal objects that are not normally exposed and uses an instance of MockGameApiWrapper.
+
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/StartUp.lua#L57']LibGroupBroadcastInternal.SetupMockInstance[/URL]
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+
+[SIZE="3"]Protocol[/SIZE]
+[INDENT]
+    [SIZE="2"]GetId[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:GetId()
+  -> id: number
+        [/highlight]
+ Getter for the protocol's ID.
+
+[I]@return[/I] [B]id[/B] — The protocol's ID.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]GetName[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:GetName()
+  -> name: string
+        [/highlight]
+ Getter for the protocol's name.
+
+[I]@return[/I] [B]name[/B] — The protocol's name.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]AddField[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:AddField(field: FieldBase)
+  -> protocol: Protocol
+        [/highlight]
+ Adds a field to the protocol. Fields are serialized in the order they are added.
+
+[I]@param[/I] [B]field[/B] — The field to add.
+[I]@return[/I] [B]protocol[/B] — Returns the protocol for chaining.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]OnData[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:OnData(callback: fun(unitTag: string, data: table))
+  -> protocol: Protocol
+        [/highlight]
+ Sets the callback to be called when data is received for this protocol.
+
+[I]@param[/I] [B]callback[/B] — The callback to call when data is received.
+[I]@return[/I] [B]protocol[/B] — Returns the protocol for chaining.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]IsFinalized[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:IsFinalized()
+  -> isFinalized: boolean
+        [/highlight]
+ Returns whether the protocol has been finalized.
+
+[I]@return[/I] [B]isFinalized[/B] — Whether the protocol has been finalized.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]Finalize[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:Finalize(options?: ProtocolOptions)
+  -> boolean
+        [/highlight]
+ Finalizes the protocol. This must be called before the protocol can be used to send or receive data.
+
+[I]@param[/I] [B]options[/B] — Optional options for the protocol.
+
+Options:
+[LIST]
+    [*][B]isRelevantInCombat[/B] - [I]boolean[/I] - Whether the protocol is relevant in combat.
+    [*][B]replaceQueuedMessages[/B] - [I]boolean[/I] - Whether to replace already queued messages with the same protocol ID when Send is called.
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]Send[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:Send(values: table, options?: ProtocolOptions)
+  -> success: boolean
+        [/highlight]
+ Converts the passed values into a message and queues it for sending.
+
+[I]@param[/I] [B]values[/B] — The values to send.
+[I]@param[/I] [B]options[/B] — Optional options for the message.
+[I]@return[/I] [B]success[/B] — Whether the message was successfully queued.
+    [/INDENT]
+[/INDENT]
+

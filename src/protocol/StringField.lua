@@ -10,23 +10,29 @@ local ArrayField = LGB.internal.class.ArrayField
 local EnumField = LGB.internal.class.EnumField
 local logger = LGB.internal.logger
 
---- @class StringFieldOptions: FieldOptionsBase
---- @field characters string? The characters to use for the string. If not provided, the string will be treated as a sequence of bytes.
---- @field minLength number? The minimum length of the string. Defaults to 0.
---- @field maxLength number? The maximum length of the string. Defaults to 255.
---- @field defaultValue string? The default value for the field.
-
---- @class StringField: FieldBase
---- @field New fun(self: StringField, label: string, options?: StringFieldOptions): StringField
-local StringField = FieldBase:Subclass()
-LGB.internal.class.StringField = StringField
-
 local AVAILABLE_OPTIONS = {
     characters = true,
     minLength = true,
     maxLength = true,
 }
 
+--[[ doc.lua begin ]]--
+
+--- @docType options
+--- @class StringFieldOptions: FieldOptionsBase
+--- @field characters string? The characters to use for the string. If not provided, the string will be treated as a sequence of bytes.
+--- @field minLength number? The minimum length of the string. Defaults to 0.
+--- @field maxLength number? The maximum length of the string. Defaults to 255.
+--- @field defaultValue string? The default value for the field.
+
+--- @docType hidden
+--- @class StringField: FieldBase
+--- @field protected arrayField ArrayField
+--- @field New fun(self: StringField, label: string, options?: StringFieldOptions): StringField
+local StringField = FieldBase:Subclass()
+LGB.internal.class.StringField = StringField
+
+--[[ doc.lua end ]]--
 -- as of v10.3.2 utf8.char still crashes the game, so we use this code ported from the utf8lib in Lua5.3 instead
 local UTF8BUFFSZ = 8
 local buff = {}
@@ -48,7 +54,9 @@ local function utf8esc(x)
     end
     return string.char(unpack(buff, UTF8BUFFSZ - n, UTF8BUFFSZ - 1))
 end
+--[[ doc.lua begin ]]--
 
+--- @protected
 function StringField:Initialize(label, options)
     self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     FieldBase.Initialize(self, label, options)

@@ -10,6 +10,8 @@ local Protocol = LGB.internal.class.Protocol
 
 local CUSTOM_EVENT_CALLBACK_PREFIX = "OnCustomEvent_"
 
+--[[ doc.lua begin ]]--
+
 --- @class ProtocolManager
 --- @field New fun(self: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue, handlerManager: HandlerManager): ProtocolManager
 local ProtocolManager = ZO_InitializingObject:Subclass()

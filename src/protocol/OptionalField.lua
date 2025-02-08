@@ -7,11 +7,17 @@ local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
 local FlagField = LGB.internal.class.FlagField
 
+--[[ doc.lua begin ]]--
+
+--- @docType hidden
 --- @class OptionalField: FieldBase
+--- @field protected isNilField FlagField
+--- @field protected valueField FieldBase
 --- @field New fun(self: OptionalField, valueField: FieldBase): OptionalField
 local OptionalField = FieldBase:Subclass()
 LGB.internal.class.OptionalField = OptionalField
 
+--- @protected
 function OptionalField:Initialize(valueField)
     FieldBase.Initialize(self, valueField.label)
 

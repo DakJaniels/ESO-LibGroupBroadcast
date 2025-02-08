@@ -5,21 +5,33 @@
 --- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 
+local AVAILABLE_OPTIONS = {
+    defaultValue = true,
+}
+
+--[[ doc.lua begin ]]--
+
+--- @docType hidden
 --- @class FieldOptionsBase
 --- @field defaultValue any? The default value for the field.
 
+--- @docType hidden
 --- @class FieldBase
---- @field private New fun(self: FieldBase, label: string, options?: FieldOptionsBase): FieldBase
+--- @field protected index integer
+--- @field protected label string
+--- @field protected warnings table<string>
+--- @field protected subfields table<FieldBase>
+--- @field protected options FieldOptionsBase
+--- @field private avaliableOptions table<string, boolean>
+--- @field protected New fun(self: FieldBase, label: string, options?: FieldOptionsBase): FieldBase
 --- @field private MUST_IMPLEMENT fun(self:FieldBase, methodName: string)
 --- @field protected Initialize fun(self:FieldBase, label: string, options?: FieldOptionsBase)
 --- @field protected Subclass fun(): FieldBase
 --- @field protected GetNumBitsRangeInternal fun(self:FieldBase): integer, integer
+--- @field Serialize fun(self:FieldBase, data: BinaryBuffer, value?: any)
+--- @field Deserialize fun(self:FieldBase, data: BinaryBuffer): any
 local FieldBase = ZO_InitializingObject:Subclass()
 LGB.internal.class.FieldBase = FieldBase
-
-local AVAILABLE_OPTIONS = {
-    defaultValue = true,
-}
 
 local function ValidateOptions(self, options)
     if not options then
@@ -140,20 +152,8 @@ end
 --- @return integer maxBits The maximum number of bits the serialized data will take up.
 function FieldBase:GetNumBitsRange() return self:GetNumBitsRangeInternal() end
 
+--[[ doc.lua end ]]--
+
 FieldBase:MUST_IMPLEMENT("GetNumBitsRangeInternal")
-
---- Writes the value to the data stream.
---- @param data BinaryBuffer The data stream to write to.
---- @param value? nil The value to serialize. If not provided, the default value specified in the options will be used.
-function FieldBase:Serialize(data, value) end
-
-FieldBase.Serialize = nil
 FieldBase:MUST_IMPLEMENT("Serialize")
-
---- Reads the value from the data stream.
---- @param data BinaryBuffer The data stream to read from.
---- @return nil value The deserialized value.
-function FieldBase:Deserialize(data) end
-
-FieldBase.Deserialize = nil
 FieldBase:MUST_IMPLEMENT("Deserialize")

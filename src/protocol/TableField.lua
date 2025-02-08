@@ -7,14 +7,20 @@ local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
 local logger = LGB.internal.logger
 
+--[[ doc.lua begin ]]--
+
+--- @docType options
 --- @class TableFieldOptions: FieldOptionsBase
 --- @field defaultValue table? The default value for the field.
 
+--- @docType hidden
 --- @class TableField: FieldBase
+--- @field protected fields FieldBase[]
 --- @field New fun(self: TableField, label: string, valueFields: FieldBase[], options?: TableFieldOptions): TableField
 local TableField = FieldBase:Subclass()
 LGB.internal.class.TableField = TableField
 
+--- @protected
 function TableField:Initialize(label, valueFields, options)
     FieldBase.Initialize(self, label, options)
     options = self.options

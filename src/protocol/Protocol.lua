@@ -10,15 +10,27 @@ local FixedSizeDataMessage = LGB.internal.class.FixedSizeDataMessage
 local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
 local logger = LGB.internal.logger
 
+--[[ doc.lua begin ]]--
+
+--- @docType options
 --- @class ProtocolOptions
 --- @field isRelevantInCombat boolean? Whether the protocol is relevant in combat.
 --- @field replaceQueuedMessages boolean? Whether to replace already queued messages with the same protocol ID when Send is called.
 
 --- @class Protocol
---- @field New fun(self: Protocol, id: number, name: string, manager: ProtocolManager): Protocol
+--- @field protected id number
+--- @field protected name string
+--- @field protected manager ProtocolManager
+--- @field protected fields FieldBase[]
+--- @field protected fieldsByLabel table<string, FieldBase>
+--- @field protected finalized boolean
+--- @field protected onDataCallback fun(unitTag: string, data: table)
+--- @field protected options ProtocolOptions
+--- @field protected New fun(self: Protocol, id: number, name: string, manager: ProtocolManager): Protocol
 local Protocol = ZO_InitializingObject:Subclass()
 LGB.internal.class.Protocol = Protocol
 
+--- @protected
 function Protocol:Initialize(id, name, manager)
     self.id = id
     self.name = name
@@ -65,6 +77,12 @@ function Protocol:OnData(callback)
 
     self.onDataCallback = callback
     return self
+end
+
+--- Returns whether the protocol has been finalized.
+--- @return boolean isFinalized Whether the protocol has been finalized.
+function Protocol:IsFinalized()
+    return self.finalized
 end
 
 --- Finalizes the protocol. This must be called before the protocol can be used to send or receive data.
@@ -121,12 +139,6 @@ function Protocol:Finalize(options)
     return true
 end
 
---- Returns whether the protocol has been finalized.
---- @return boolean isFinalized Whether the protocol has been finalized.
-function Protocol:IsFinalized()
-    return self.finalized
-end
-
 --- Converts the passed values into a message and queues it for sending.
 --- @param values table The values to send.
 --- @param options? ProtocolOptions Optional options for the message.
@@ -161,6 +173,7 @@ function Protocol:Send(values, options)
 end
 
 --- Internal function to receive data for the protocol.
+--- @protected
 function Protocol:Receive(unitTag, message)
     assert(self.finalized, "Protocol '" .. self.name .. "' has not been finalized")
 

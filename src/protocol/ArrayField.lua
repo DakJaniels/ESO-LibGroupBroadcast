@@ -8,21 +8,29 @@ local FieldBase = LGB.internal.class.FieldBase
 local NumericField = LGB.internal.class.NumericField
 local logger = LGB.internal.logger
 
---- @class ArrayFieldOptions : FieldOptionsBase
---- @field minLength number? The minimum length of the array.
---- @field maxLength number? The maximum length of the array.
---- @field defaultValue table? The default value for the field.
-
---- @class ArrayField: FieldBase
---- @field New fun(self:ArrayField, valueField: FieldBase, options?: ArrayFieldOptions): ArrayField
-local ArrayField = FieldBase:Subclass()
-LGB.internal.class.ArrayField = ArrayField
-
 local DEFAULT_MAX_LENGTH = 2 ^ 8 - 1
 local AVAILABLE_OPTIONS = {
     minLength = true,
     maxLength = true,
 }
+
+--[[ doc.lua begin ]]--
+
+--- @docType options
+--- @class ArrayFieldOptions : FieldOptionsBase
+--- @field minLength number? The minimum length of the array.
+--- @field maxLength number? The maximum length of the array.
+--- @field defaultValue table? The default value for the field.
+
+--- @docType hidden
+--- @class ArrayField: FieldBase
+--- @field protected minLength number
+--- @field protected maxLength number
+--- @field protected countField NumericField
+--- @field protected valueField FieldBase
+--- @field New fun(self:ArrayField, valueField: FieldBase, options?: ArrayFieldOptions): ArrayField
+local ArrayField = FieldBase:Subclass()
+LGB.internal.class.ArrayField = ArrayField
 
 --- @protected
 function ArrayField:Initialize(valueField, options)

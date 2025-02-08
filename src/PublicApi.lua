@@ -6,22 +6,14 @@
 local LGB = LibGroupBroadcast
 local internal = LGB.internal
 
---- Creates a new separate instance of the LibGroupBroadcast library for use in Taneth tests.
----
---- The returned table has the same API as the global LibGroupBroadcast table, but is not connected to the global state.
---- It also contains references to some internal objects that are not normally exposed and uses an instance of MockGameApiWrapper.
----
---- @see LibGroupBroadcastInternal.SetupMockInstance
-function LGB.SetupMockInstance()
-    return internal.SetupMockInstance()
-end
+--[[ doc.lua begin ]]--
 
 --- Registers a handler under a unique name. A handler in this context is a library or addon that uses one or more protocols or custom events for communication.
 --- @param handlerName string The name of the handler to register.
 --- @param addonName string The name of the addon or library that is registering the handler.
 --- @param handlerApi? table The handler table to register. Should provide some api for addon authors to interact with. Can be nil if the handler api is private or should be accessed via other means.
 --- @return number|nil handlerId An identifier for the handler to declare protocols and custom events with or nil if the registration failed.
---- @see GetHandler
+--- @see LibGroupBroadcast.GetHandler
 function LGB:RegisterHandler(handlerName, addonName, handlerApi)
     return internal.handlerManager:RegisterHandler(handlerName, addonName, handlerApi)
 end
@@ -29,7 +21,7 @@ end
 --- Returns a handler's api by its unique name, if it is public.
 --- @param handlerName string The name of the handler to get.
 --- @return table handler The handler table that was registered with the given name.
---- @see RegisterHandler
+--- @see LibGroupBroadcast.RegisterHandler
 function LGB:GetHandler(handlerName)
     return internal.handlerManager:GetHandlerApi(handlerName)
 end
@@ -76,7 +68,9 @@ function LGB:DeclareProtocol(handlerId, protocolId, protocolName)
     return internal.protocolManager:DeclareProtocol(handlerId, protocolId, protocolName)
 end
 
---- Creates and returns an instance of the ArrayField class.
+--- Creates and returns an ArrayField, which can be used to send the passed field multiple times.
+--- Internally this will use a NumericField to store the length of the array and then serialize the values using the passed field.
+--- By default the array can have up to 255 elements, but this can be changed using the options table.
 --- @param valueField FieldBase The field that should be used for the values in the array.
 --- @param options? ArrayFieldOptions The options table to use for the field.
 --- @return ArrayField field The created ArrayField instance.
@@ -116,6 +110,7 @@ end
 --- Creates and returns an instance of the OptionalField class.
 --- @param valueField FieldBase The field that should be made optional.
 --- @return OptionalField field The created OptionalField instance.
+--- @see OptionalField
 function LGB.CreateOptionalField(valueField)
     return internal.class.OptionalField:New(valueField)
 end
@@ -140,7 +135,7 @@ end
 
 --- Creates and returns an instance of the StringField class.
 --- @param label string The label of the field.
---- @param options? table The options table to use for the field.
+--- @param options? StringFieldOptions The options table to use for the field.
 --- @return StringField field The created StringField instance.
 --- @see StringField
 function LGB.CreateStringField(label, options)
@@ -150,7 +145,7 @@ end
 --- Creates and returns an instance of the TableField class.
 --- @param label string The label of the field.
 --- @param valueFields FieldBase[] A list of fields contained in the table.
---- @param options? table The options table to use for the field.
+--- @param options? TableFieldOptions The options table to use for the field.
 --- @return TableField field The created TableField instance.
 --- @see TableField
 function LGB.CreateTableField(label, valueFields, options)
@@ -160,7 +155,7 @@ end
 --- Creates and returns an instance of the VariantField class.
 --- @param label string The label of the field.
 --- @param variants FieldBase[] A list of fields that can be used as variants.
---- @param options? table The options table to use for the field.
+--- @param options? VariantFieldOptions The options table to use for the field.
 --- @return VariantField field The created VariantField instance.
 --- @see VariantField
 function LGB.CreateVariantField(label, variants, options)
@@ -174,5 +169,17 @@ end
 function LGB.CreateFieldBaseSubclass()
     return internal.class.FieldBase:Subclass()
 end
+
+--- Creates a new separate instance of the LibGroupBroadcast library for use in Taneth tests.
+---
+--- The returned table has the same API as the global LibGroupBroadcast table, but is not connected to the global state.
+--- It also contains references to some internal objects that are not normally exposed and uses an instance of MockGameApiWrapper.
+---
+--- @see LibGroupBroadcastInternal.SetupMockInstance
+function LGB.SetupMockInstance()
+    return internal.SetupMockInstance()
+end
+
+--[[ doc.lua end ]]--
 
 LGB:Initialize()

@@ -5,6 +5,7 @@
 if not Taneth then return end
 --- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
+--- @class Protocol
 local Protocol = LGB.internal.class.Protocol
 local FlagField = LGB.internal.class.FlagField
 local NumericField = LGB.internal.class.NumericField
