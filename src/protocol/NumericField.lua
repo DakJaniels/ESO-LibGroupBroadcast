@@ -71,8 +71,7 @@ end
 function NumericField:Initialize(label, options)
     self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     FieldBase.Initialize(self, label, options)
-
-    options = self.options
+    options = self.options --[[@as NumericFieldOptions]]
 
     if not self:Assert(options.numBits == nil or (options.numBits >= 2 and options.numBits <= 32), "Number of bits must be between 2 and 32") then return end
 

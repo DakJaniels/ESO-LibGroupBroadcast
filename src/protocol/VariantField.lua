@@ -34,7 +34,7 @@ LGB.internal.class.VariantField = VariantField
 function VariantField:Initialize(label, variants, options)
     self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     FieldBase.Initialize(self, label, options)
-    options = self.options
+    options = self.options --[[@as VariantFieldOptions]]
 
     local entries = {}
     local variantByLabel = {}

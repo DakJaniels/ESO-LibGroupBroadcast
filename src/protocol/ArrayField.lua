@@ -8,12 +8,6 @@ local FieldBase = LGB.internal.class.FieldBase
 local NumericField = LGB.internal.class.NumericField
 local logger = LGB.internal.logger
 
-local DEFAULT_MAX_LENGTH = 2 ^ 8 - 1
-local AVAILABLE_OPTIONS = {
-    minLength = true,
-    maxLength = true,
-}
-
 --[[ doc.lua begin ]]--
 
 --- @docType options
@@ -32,14 +26,22 @@ local AVAILABLE_OPTIONS = {
 local ArrayField = FieldBase:Subclass()
 LGB.internal.class.ArrayField = ArrayField
 
+--[[ doc.lua end ]]--
+local DEFAULT_MAX_LENGTH = 2 ^ 8 - 1
+local AVAILABLE_OPTIONS = {
+    minLength = true,
+    maxLength = true,
+}
+--[[ doc.lua begin ]]--
+
 --- @protected
 function ArrayField:Initialize(valueField, options)
     self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     FieldBase.Initialize(self, valueField.label, options)
-    options = self.options
+    options = self.options --[[@as ArrayFieldOptions]]
+
     local minLength = options.minLength or 0
     local maxLength = options.maxLength or DEFAULT_MAX_LENGTH
-
     self:Assert(type(minLength) and minLength >= 0, "minLength must be a number >= 0")
     self:Assert(type(maxLength) and maxLength > minLength, "maxLength must be a number > minLength")
     self:Assert(ZO_Object.IsInstanceOf(valueField, FieldBase), "valueField must be an instance of FieldBase")

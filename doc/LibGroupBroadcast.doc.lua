@@ -361,6 +361,7 @@ function OptionalField:Deserialize(data) end
 --- @field New fun(self:ArrayField, valueField: FieldBase, options?: ArrayFieldOptions): ArrayField
 local ArrayField = FieldBase:Subclass()
 
+
 --- @protected
 function ArrayField:Initialize(valueField, options) end
 

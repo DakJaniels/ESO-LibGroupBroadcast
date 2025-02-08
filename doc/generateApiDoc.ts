@@ -56,6 +56,7 @@ INCLUDED_FILES.forEach((file) => {
             return;
         } else if (line.startsWith('--[[ doc.lua end ]]--')) {
             isRelevantPart = false;
+            return;
         } else if (line.startsWith('--- @docType') || line.startsWith('LGB.internal')) {
             return;
         } else if (inFunction) {

@@ -23,7 +23,7 @@ LGB.internal.class.TableField = TableField
 --- @protected
 function TableField:Initialize(label, valueFields, options)
     FieldBase.Initialize(self, label, options)
-    options = self.options
+    options = self.options --[[@as TableFieldOptions]]
 
     if self:Assert(type(valueFields) == "table", "'fields' must be a table") then
         for i = 1, #valueFields do

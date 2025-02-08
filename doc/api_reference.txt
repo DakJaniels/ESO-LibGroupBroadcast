@@ -130,7 +130,7 @@ function LibGroupBroadcast.CreateArrayField(valueField: FieldBase, options?: Arr
 
 See:
 [LIST]
-    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/ArrayField.lua#L26']ArrayField[/URL]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/ArrayField.lua#L20']ArrayField[/URL]
 [/LIST]
 
 Options:

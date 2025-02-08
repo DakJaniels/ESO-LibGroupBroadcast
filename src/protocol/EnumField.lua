@@ -32,7 +32,8 @@ LGB.internal.class.EnumField = EnumField
 function EnumField:Initialize(label, valueTable, options)
     self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     FieldBase.Initialize(self, label, options)
-    options = self.options
+    options = self.options --[[@as EnumFieldOptions]]
+
     if not self:Assert(type(valueTable) == "table", "The valueTable must be a table") then return end
     self.indexField = self:RegisterSubField(NumericField:New("index", {
         numBits = options.numBits,

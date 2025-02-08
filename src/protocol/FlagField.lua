@@ -22,7 +22,7 @@ LGB.internal.class.FlagField = FlagField
 --- @protected
 function FlagField:Initialize(label, options)
     FieldBase.Initialize(self, label, options)
-    options = self.options
+    options = self.options --[[@as FlagFieldOptions]]
     self:Assert(options.defaultValue == nil or type(options.defaultValue) == "boolean", "defaultValue must be a boolean")
 end
 

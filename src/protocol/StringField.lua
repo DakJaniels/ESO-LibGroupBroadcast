@@ -60,7 +60,7 @@ end
 function StringField:Initialize(label, options)
     self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     FieldBase.Initialize(self, label, options)
-    options = self.options
+    options = self.options --[[@as StringFieldOptions]]
 
     local charField
     if options.characters then
