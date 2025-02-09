@@ -101,6 +101,7 @@ exec(cmd, (error, stdout, stderr) => {
 const PREFIX = path.basename(path.resolve(process.cwd())) + "/src/";
 const ALLOWED_FILE_LIST = [
     "PublicApi.lua",
+    "Handler.lua",
     "protocol/Protocol.lua",
     "protocol/NumericField.lua",
     "protocol/FlagField.lua",

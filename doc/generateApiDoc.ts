@@ -6,6 +6,7 @@ const SOURCE_PATH = "./src";
 const OUTPUT_FILE = "./doc/LibGroupBroadcast.doc.lua";
 const INCLUDED_FILES = new Set([
     "PublicApi.lua",
+    "Handler.lua",
     "protocol/FieldBase.lua",
     "protocol/Protocol.lua",
     "protocol/NumericField.lua",

@@ -12,7 +12,7 @@ local internal = LGB.internal
 --- @param addonName string The name of the addon or library that is registering the handler.
 --- @param handlerName? string An optional short name of the handler to register, which can be used in addition to the addon name to get the handler api.
 --- @return Handler handler An object with methods to declare protocols and custom events with and to modify various aspects of the handler, or nil if the registration failed.
---- @see LibGroupBroadcast.GetHandler
+--- @see LibGroupBroadcast.GetHandlerApi
 function LGB:RegisterHandler(addonName, handlerName)
     return internal.handlerManager:RegisterHandler(addonName, handlerName)
 end

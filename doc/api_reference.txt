@@ -3,58 +3,38 @@
     [SIZE="2"]RegisterHandler[/SIZE]
     [INDENT]
         [highlight="Lua"]
-(method) LibGroupBroadcast:RegisterHandler(handlerName: string, addonName: string, handlerApi?: table)
-  -> handlerId: number|nil
+(method) LibGroupBroadcast:RegisterHandler(addonName: string, handlerName?: string)
+  -> handler: Handler
         [/highlight]
  Registers a handler under a unique name. A handler in this context is a library or addon that uses one or more protocols or custom events for communication.
 
-[I]@param[/I] [B]handlerName[/B] — The name of the handler to register.
 [I]@param[/I] [B]addonName[/B] — The name of the addon or library that is registering the handler.
-[I]@param[/I] [B]handlerApi[/B] — The handler table to register. Should provide some api for addon authors to interact with. Can be nil if the handler api is private or should be accessed via other means.
-[I]@return[/I] [B]handlerId[/B] — An identifier for the handler to declare protocols and custom events with or nil if the registration failed.
+[I]@param[/I] [B]handlerName[/B] — An optional short name of the handler to register, which can be used in addition to the addon name to get the handler api.
+[I]@return[/I] [B]handler[/B] — An object with methods to declare protocols and custom events with and to modify various aspects of the handler, or nil if the registration failed.
 
 See:
 [LIST]
-    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/PublicApi.lua#L25']LibGroupBroadcast.GetHandler[/URL]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/PublicApi.lua#L24']LibGroupBroadcast.GetHandlerApi[/URL]
 [/LIST]
     [/INDENT]
 [/INDENT]
 
 [INDENT]
-    [SIZE="2"]GetHandler[/SIZE]
+    [SIZE="2"]GetHandlerApi[/SIZE]
     [INDENT]
         [highlight="Lua"]
-(method) LibGroupBroadcast:GetHandler(handlerName: string)
+(method) LibGroupBroadcast:GetHandlerApi(handlerName: string)
   -> handler: table
         [/highlight]
  Returns a handler's api by its unique name, if it is public.
 
 [I]@param[/I] [B]handlerName[/B] — The name of the handler to get.
-[I]@return[/I] [B]handler[/B] — The handler table that was registered with the given name.
+[I]@return[/I] [B]handler[/B] — The handler api table that was registered with the given handler name or nil if no api was provided.
 
 See:
 [LIST]
-    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/PublicApi.lua#L17']LibGroupBroadcast.RegisterHandler[/URL]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/PublicApi.lua#L16']LibGroupBroadcast.RegisterHandler[/URL]
 [/LIST]
-    [/INDENT]
-[/INDENT]
-
-[INDENT]
-    [SIZE="2"]DeclareCustomEvent[/SIZE]
-    [INDENT]
-        [highlight="Lua"]
-(method) LibGroupBroadcast:DeclareCustomEvent(handlerId: number, eventId: number, eventName: string)
-  -> FireEvent: function|nil
-        [/highlight]
- This function declares a custom event that can be used to send messages without data to other group members with minimal overhead.
- Each event id and event name has to be globally unique between all addons. In order to coordinate which values are already in use,
- every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
- https://wiki.esoui.com/LibGroupBroadcast_IDs
-
-[I]@param[/I] [B]handlerId[/B] — The ID of the handler this custom event should be associated with.
-[I]@param[/I] [B]eventId[/B] — The custom event ID to use.
-[I]@param[/I] [B]eventName[/B] — The custom event name to use.
-[I]@return[/I] [B]FireEvent[/B] — A function that can be called to request sending this custom event to other group members or nil if the declaration failed.
     [/INDENT]
 [/INDENT]
 
@@ -85,31 +65,6 @@ See:
 [I]@param[/I] [B]eventName[/B] — The custom event name to unregister from.
 [I]@param[/I] [B]callback[/B] — The callback function to unregister. Has to be the same instance as the one registered.
 [I]@return[/I] [B]success[/B] — True if the callback was successfully unregistered, false otherwise.
-    [/INDENT]
-[/INDENT]
-
-[INDENT]
-    [SIZE="2"]DeclareProtocol[/SIZE]
-    [INDENT]
-        [highlight="Lua"]
-(method) LibGroupBroadcast:DeclareProtocol(handlerId: number, protocolId: number, protocolName: string)
-  -> protocol: Protocol|nil
-        [/highlight]
- Declares a new protocol with the given ID and name and returns the Protocol object instance.
-
- The protocol id and name have to be globally unique between all addons. In order to coordinate which values are already in use,
- every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
- https://wiki.esoui.com/LibGroupBroadcast_IDs
-
-[I]@param[/I] [B]handlerId[/B] — The ID of the handler this custom event should be associated with.
-[I]@param[/I] [B]protocolId[/B] — The ID of the protocol to declare.
-[I]@param[/I] [B]protocolName[/B] — The name of the protocol to declare.
-[I]@return[/I] [B]protocol[/B] — The Protocol object instance that was declared or nil if the declaration failed.
-
-See:
-[LIST]
-    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/Protocol.lua#L20']Protocol[/URL]
-[/LIST]
     [/INDENT]
 [/INDENT]
 
@@ -404,7 +359,93 @@ function LibGroupBroadcast.SetupMockInstance()
 
 See:
 [LIST]
-    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/StartUp.lua#L57']LibGroupBroadcastInternal.SetupMockInstance[/URL]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/StartUp.lua#L56']LibGroupBroadcastInternal.SetupMockInstance[/URL]
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+
+[SIZE="3"]Handler[/SIZE]
+[INDENT]
+    [SIZE="2"]SetApi[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Handler:SetApi(api: table)
+        [/highlight]
+ Sets the API object for the handler which is returned by LibGroupBroadcast's GetHandler function.
+
+[I]@param[/I] [B]api[/B] — The API object to set.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/PublicApi.lua#L24']LibGroupBroadcast.GetHandlerApi[/URL]
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]SetDisplayName[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Handler:SetDisplayName(displayName: string)
+        [/highlight]
+ Sets a display name for the handler for use in various places.
+
+[I]@param[/I] [B]displayName[/B] — The display name to set.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]SetDescription[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Handler:SetDescription(description: string)
+        [/highlight]
+ Sets a description for the handler for use in various places.
+
+[I]@param[/I] [B]description[/B] — The description to set.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]DeclareCustomEvent[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Handler:DeclareCustomEvent(eventId: number, eventName: string)
+  -> FireEvent: function
+        [/highlight]
+ Declares a custom event that can be used to send messages without data to other group members with minimal overhead or throws an error if the declaration failed.
+ 
+ Each event id and event name has to be globally unique between all addons. In order to coordinate which values are already in use,
+ every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
+ https://wiki.esoui.com/LibGroupBroadcast_IDs
+
+[I]@param[/I] [B]eventId[/B] — The custom event ID to use.
+[I]@param[/I] [B]eventName[/B] — The custom event name to use.
+[I]@return[/I] [B]FireEvent[/B] — A function that can be called to request sending this custom event to other group members.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]DeclareProtocol[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Handler:DeclareProtocol(protocolId: number, protocolName: string)
+  -> protocol: Protocol
+        [/highlight]
+ Declares a new protocol with the given ID and name and returns the Protocol object instance or throws an error if the declaration failed.
+
+ The protocol id and name have to be globally unique between all addons. In order to coordinate which values are already in use,
+ every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
+ https://wiki.esoui.com/LibGroupBroadcast_IDs
+
+[I]@param[/I] [B]protocolId[/B] — The ID of the protocol to declare.
+[I]@param[/I] [B]protocolName[/B] — The name of the protocol to declare.
+[I]@return[/I] [B]protocol[/B] — The Protocol object instance that was declared.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/test/protocol/Protocol.lua#L8']Protocol[/URL]
 [/LIST]
     [/INDENT]
 [/INDENT]

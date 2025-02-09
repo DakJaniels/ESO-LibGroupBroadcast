@@ -8,28 +8,17 @@
 local LibGroupBroadcast = {}
 
 --- Registers a handler under a unique name. A handler in this context is a library or addon that uses one or more protocols or custom events for communication.
---- @param handlerName string The name of the handler to register.
 --- @param addonName string The name of the addon or library that is registering the handler.
---- @param handlerApi? table The handler table to register. Should provide some api for addon authors to interact with. Can be nil if the handler api is private or should be accessed via other means.
---- @return number|nil handlerId An identifier for the handler to declare protocols and custom events with or nil if the registration failed.
---- @see LibGroupBroadcast.GetHandler
-function LibGroupBroadcast:RegisterHandler(handlerName, addonName, handlerApi) end
+--- @param handlerName? string An optional short name of the handler to register, which can be used in addition to the addon name to get the handler api.
+--- @return Handler handler An object with methods to declare protocols and custom events with and to modify various aspects of the handler, or nil if the registration failed.
+--- @see LibGroupBroadcast.GetHandlerApi
+function LibGroupBroadcast:RegisterHandler(addonName, handlerName) end
 
 --- Returns a handler's api by its unique name, if it is public.
 --- @param handlerName string The name of the handler to get.
---- @return table handler The handler table that was registered with the given name.
+--- @return table handler The handler api table that was registered with the given handler name or nil if no api was provided.
 --- @see LibGroupBroadcast.RegisterHandler
-function LibGroupBroadcast:GetHandler(handlerName) end
-
---- This function declares a custom event that can be used to send messages without data to other group members with minimal overhead.
---- Each event id and event name has to be globally unique between all addons. In order to coordinate which values are already in use,
---- every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
---- https://wiki.esoui.com/LibGroupBroadcast_IDs
---- @param handlerId number The ID of the handler this custom event should be associated with.
---- @param eventId number The custom event ID to use.
---- @param eventName string The custom event name to use.
---- @return function|nil FireEvent A function that can be called to request sending this custom event to other group members or nil if the declaration failed.
-function LibGroupBroadcast:DeclareCustomEvent(handlerId, eventId, eventName) end
+function LibGroupBroadcast:GetHandlerApi(handlerName) end
 
 --- Registers a callback function to be called when a custom event is received.
 --- @param eventName string The custom event name to register for.
@@ -42,18 +31,6 @@ function LibGroupBroadcast:RegisterForCustomEvent(eventName, callback) end
 --- @param callback fun(unitTag: string) The callback function to unregister. Has to be the same instance as the one registered.
 --- @return boolean success True if the callback was successfully unregistered, false otherwise.
 function LibGroupBroadcast:UnregisterForCustomEvent(eventName, callback) end
-
---- Declares a new protocol with the given ID and name and returns the Protocol object instance.
----
---- The protocol id and name have to be globally unique between all addons. In order to coordinate which values are already in use,
---- every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
---- https://wiki.esoui.com/LibGroupBroadcast_IDs
---- @param handlerId number The ID of the handler this custom event should be associated with.
---- @param protocolId number The ID of the protocol to declare.
---- @param protocolName string The name of the protocol to declare.
---- @return Protocol|nil protocol The Protocol object instance that was declared or nil if the declaration failed.
---- @see Protocol
-function LibGroupBroadcast:DeclareProtocol(handlerId, protocolId, protocolName) end
 
 --- Creates and returns an ArrayField, which can be used to send the passed field multiple times.
 --- Internally this will use a NumericField to store the length of the array and then serialize the values using the passed field.
@@ -142,6 +119,49 @@ function LibGroupBroadcast.CreateFieldBaseSubclass() end
 ---
 --- @see LibGroupBroadcastInternal.SetupMockInstance
 function LibGroupBroadcast.SetupMockInstance() end
+
+
+--- @class Handler
+--- @field private proxy table
+--- @field protected New fun(self: Handler, proxy: table): Handler
+local Handler = ZO_InitializingObject:Subclass()
+
+--- @protected
+function Handler:Initialize(proxy) end
+
+--- Sets the API object for the handler which is returned by LibGroupBroadcast's GetHandler function.
+--- @param api table The API object to set.
+--- @see LibGroupBroadcast.GetHandlerApi
+function Handler:SetApi(api) end
+
+--- Sets a display name for the handler for use in various places.
+--- @param displayName string The display name to set.
+function Handler:SetDisplayName(displayName) end
+
+--- Sets a description for the handler for use in various places.
+--- @param description string The description to set.
+function Handler:SetDescription(description) end
+
+--- Declares a custom event that can be used to send messages without data to other group members with minimal overhead or throws an error if the declaration failed.
+--- 
+--- Each event id and event name has to be globally unique between all addons. In order to coordinate which values are already in use,
+--- every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
+--- https://wiki.esoui.com/LibGroupBroadcast_IDs
+--- @param eventId number The custom event ID to use.
+--- @param eventName string The custom event name to use.
+--- @return function FireEvent A function that can be called to request sending this custom event to other group members.
+function Handler:DeclareCustomEvent(eventId, eventName) end
+
+--- Declares a new protocol with the given ID and name and returns the Protocol object instance or throws an error if the declaration failed.
+---
+--- The protocol id and name have to be globally unique between all addons. In order to coordinate which values are already in use,
+--- every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
+--- https://wiki.esoui.com/LibGroupBroadcast_IDs
+--- @param protocolId number The ID of the protocol to declare.
+--- @param protocolName string The name of the protocol to declare.
+--- @return Protocol protocol The Protocol object instance that was declared.
+--- @see Protocol
+function Handler:DeclareProtocol(protocolId, protocolName) end
 
 
 --- @class FieldOptionsBase
@@ -662,27 +682,25 @@ function MessageQueue:GetNextRelevantEntryWithExactSize(size, inCombat) end
 
 
 --- @class HandlerManager
---- @field New fun(self: HandlerManager): HandlerManager
+--- @field New fun(self: HandlerManager, protocolManager: ProtocolManager): HandlerManager
 local HandlerManager = ZO_InitializingObject:Subclass()
 
-function HandlerManager:Initialize() end
+function HandlerManager:Initialize(protocolManager) end
 
-function HandlerManager:RegisterHandler(handlerName, addonName, handlerApi) end
+function HandlerManager:RegisterHandler(addonName, handlerName) end
 
 function HandlerManager:GetHandlerApi(handlerName) end
 
-function HandlerManager:GetHandler(handlerId) end
-
-function HandlerManager:GenerateId() end
+function HandlerManager:GetHandlerData(handler) end
 
 
 --- @class ProtocolManager
---- @field New fun(self: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue, handlerManager: HandlerManager): ProtocolManager
+--- @field New fun(self: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue): ProtocolManager
 local ProtocolManager = ZO_InitializingObject:Subclass()
 
-function ProtocolManager:Initialize(callbackManager, dataMessageQueue, handlerManager) end
+function ProtocolManager:Initialize(callbackManager, dataMessageQueue) end
 
-function ProtocolManager:DeclareCustomEvent(handlerId, eventId, eventName, options) end
+function ProtocolManager:DeclareCustomEvent(handlerData, eventId, eventName, options) end
 
 function ProtocolManager:GetCustomEventCallbackName(eventName) end
 
@@ -694,7 +712,7 @@ function ProtocolManager:GenerateCustomEventMessages() end
 
 function ProtocolManager:HandleCustomEventMessages(unitTag, messages) end
 
-function ProtocolManager:DeclareProtocol(handlerId, protocolId, protocolName) end
+function ProtocolManager:DeclareProtocol(handlerData, protocolId, protocolName) end
 
 function ProtocolManager:QueueDataMessage(message) end
 

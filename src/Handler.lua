@@ -18,9 +18,9 @@ function Handler:Initialize(proxy)
     self.proxy = proxy
 end
 
---- Sets the API object for the handlerw which is returned by LibGroupSocket's GetHandler function.
+--- Sets the API object for the handler which is returned by LibGroupBroadcast's GetHandler function.
 --- @param api table The API object to set.
---- @see LibGroupSocket.GetHandler
+--- @see LibGroupBroadcast.GetHandlerApi
 function Handler:SetApi(api)
     self.proxy:SetApi(api)
 end
