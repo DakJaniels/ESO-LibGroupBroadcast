@@ -13,8 +13,8 @@ handler:SetApi(GroupResources)
 function GroupResources:Initialize()
     local GroupResourceManager = GroupResources.GroupResourceManager
     local callbackManager = ZO_CallbackObject:New()
-    local stamina = GroupResourceManager:New(handler, 1, "Stamina", COMBAT_MECHANIC_FLAGS_STAMINA, callbackManager, LGB)
-    local magicka = GroupResourceManager:New(handler, 2, "Magicka", COMBAT_MECHANIC_FLAGS_MAGICKA, callbackManager, LGB)
+    local stamina = GroupResourceManager:New(handler, 10, "Stamina", COMBAT_MECHANIC_FLAGS_STAMINA, callbackManager, LGB)
+    local magicka = GroupResourceManager:New(handler, 11, "Magicka", COMBAT_MECHANIC_FLAGS_MAGICKA, callbackManager, LGB)
     GroupResources.GroupResourceManager = nil
     GroupResources.Initialize = nil
     return stamina, magicka
