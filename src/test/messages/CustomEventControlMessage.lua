@@ -19,7 +19,7 @@ Taneth("LibGroupBroadcast", function()
 
         it("should be able to deserialize and cast from a buffer", function()
             local data = BinaryBuffer:New(16)
-            data:WriteUInt(0xFFFF, 16)
+            data:WriteUInt(0xAFFF, 16)
             data:Rewind()
 
             local baseMessage = ControlMessageBase.Deserialize(data)
@@ -28,24 +28,24 @@ Taneth("LibGroupBroadcast", function()
             assert.equals(baseMessage, message)
             assert.is_true(ZO_Object.IsInstanceOf(message, CustomEventControlMessage))
 
-            assert.equals(0xF, message:GetId())
+            assert.equals(10, message:GetId())
             assert.same({ 36, 37, 38, 39 }, message:GetEvents())
             assert.equals(9, data.cursor)
         end)
 
         it("should return the correct message id for an event id", function()
-            assert.equals(6, CustomEventControlMessage.GetMessageIdFromEventId(0))
-            assert.equals(6, CustomEventControlMessage.GetMessageIdFromEventId(1))
-            assert.equals(6, CustomEventControlMessage.GetMessageIdFromEventId(3))
-            assert.equals(7, CustomEventControlMessage.GetMessageIdFromEventId(4))
-            assert.equals(15, CustomEventControlMessage.GetMessageIdFromEventId(39))
+            assert.equals(1, CustomEventControlMessage.GetMessageIdFromEventId(0))
+            assert.equals(1, CustomEventControlMessage.GetMessageIdFromEventId(1))
+            assert.equals(1, CustomEventControlMessage.GetMessageIdFromEventId(3))
+            assert.equals(2, CustomEventControlMessage.GetMessageIdFromEventId(4))
+            assert.equals(10, CustomEventControlMessage.GetMessageIdFromEventId(39))
         end)
 
         it("should properly validate message ids", function()
-            assert.is_false(CustomEventControlMessage.IsValidMessageId(5))
-            assert.is_true(CustomEventControlMessage.IsValidMessageId(6))
-            assert.is_true(CustomEventControlMessage.IsValidMessageId(15))
-            assert.is_false(CustomEventControlMessage.IsValidMessageId(16))
+            assert.is_false(CustomEventControlMessage.IsValidMessageId(0))
+            assert.is_true(CustomEventControlMessage.IsValidMessageId(1))
+            assert.is_true(CustomEventControlMessage.IsValidMessageId(10))
+            assert.is_false(CustomEventControlMessage.IsValidMessageId(11))
         end)
 
         it("should properly validate event ids", function()
@@ -58,7 +58,7 @@ Taneth("LibGroupBroadcast", function()
         end)
 
         it("should be able to set and get an event", function()
-            local eventId = 6
+            local eventId = 1
             local messageId = CustomEventControlMessage.GetMessageIdFromEventId(eventId)
             local message = CustomEventControlMessage:New(messageId)
 

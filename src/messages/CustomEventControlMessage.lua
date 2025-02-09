@@ -9,7 +9,7 @@ local ControlMessageBase = LGB.internal.class.ControlMessageBase
 local CustomEventControlMessage = ControlMessageBase:Subclass()
 LGB.internal.class.CustomEventControlMessage = CustomEventControlMessage
 
-local CUSTOM_EVENT_MESSAGE_ID_START = 6
+local CUSTOM_EVENT_MESSAGE_ID_START = 1
 local CUSTOM_EVENT_MESSAGE_ID_RANGE = 10
 local MIN_CUSTOM_EVENT_ID = 0
 local MAX_CUSTOM_EVENT_ID = 39
