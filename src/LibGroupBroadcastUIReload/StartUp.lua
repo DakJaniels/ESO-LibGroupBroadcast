@@ -7,11 +7,13 @@ local LGB = LibGroupBroadcast
 --- @class LibGroupBroadcastUIReload
 local lib = {}
 
-local handlerId = LGB:RegisterHandler("UIReload", "LibGroupBroadcastUIReload", lib)
+local handler = LGB:RegisterHandler("LibGroupBroadcastUIReload", "UIReload")
+handler:SetDisplayName("UI Reload")
+handler:SetDescription("Notifies other group members when your UI has reloaded.")
+handler:SetApi(lib)
 
 local EVENT_NAME = "UIReload"
-local SendEvent = LGB:DeclareCustomEvent(handlerId, 0, EVENT_NAME)
-assert(SendEvent, "Failed to declare custom event for UI reload")
+local SendEvent = handler:DeclareCustomEvent(0, EVENT_NAME)
 
 EVENT_MANAGER:RegisterForEvent("LibGroupBroadcastUIReload", EVENT_PLAYER_ACTIVATED, function(_, initial)
     if initial == false then

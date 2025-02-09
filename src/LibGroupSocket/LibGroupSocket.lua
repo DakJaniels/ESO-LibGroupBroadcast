@@ -57,9 +57,10 @@ end
 
 --------------------------------------------------- LibGroupBroadcast -------------------------------------------------
 local LGB = LibGroupBroadcast
-local handlerId = LGB:RegisterHandler("LibGroupSocketLegacyLayer", "LibGroupSocket")
-local protocol = LGB:DeclareProtocol(handlerId, 0, "LibGroupSocket")
-assert(protocol, "Failed to declare LibGroupSocket legacy protocol")
+local handler = LGB:RegisterHandler("LibGroupSocket")
+handler:SetDisplayName("LibGroupSocket Compatibility")
+handler:SetDescription("Provides backwards compatibility for addons using the old LibGroupSocket API.")
+local protocol = handler:DeclareProtocol(0, "LibGroupSocket")
 
 local CreateNumericField = LGB.CreateNumericField
 local CreateArrayField = LGB.CreateArrayField

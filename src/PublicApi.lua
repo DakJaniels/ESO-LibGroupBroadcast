@@ -6,36 +6,23 @@
 local LGB = LibGroupBroadcast
 local internal = LGB.internal
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- Registers a handler under a unique name. A handler in this context is a library or addon that uses one or more protocols or custom events for communication.
---- @param handlerName string The name of the handler to register.
 --- @param addonName string The name of the addon or library that is registering the handler.
---- @param handlerApi? table The handler table to register. Should provide some api for addon authors to interact with. Can be nil if the handler api is private or should be accessed via other means.
---- @return number|nil handlerId An identifier for the handler to declare protocols and custom events with or nil if the registration failed.
+--- @param handlerName? string An optional short name of the handler to register, which can be used in addition to the addon name to get the handler api.
+--- @return Handler handler An object with methods to declare protocols and custom events with and to modify various aspects of the handler, or nil if the registration failed.
 --- @see LibGroupBroadcast.GetHandler
-function LGB:RegisterHandler(handlerName, addonName, handlerApi)
-    return internal.handlerManager:RegisterHandler(handlerName, addonName, handlerApi)
+function LGB:RegisterHandler(addonName, handlerName)
+    return internal.handlerManager:RegisterHandler(addonName, handlerName)
 end
 
 --- Returns a handler's api by its unique name, if it is public.
 --- @param handlerName string The name of the handler to get.
---- @return table handler The handler table that was registered with the given name.
+--- @return table handler The handler api table that was registered with the given handler name or nil if no api was provided.
 --- @see LibGroupBroadcast.RegisterHandler
-function LGB:GetHandler(handlerName)
+function LGB:GetHandlerApi(handlerName)
     return internal.handlerManager:GetHandlerApi(handlerName)
-end
-
---- This function declares a custom event that can be used to send messages without data to other group members with minimal overhead.
---- Each event id and event name has to be globally unique between all addons. In order to coordinate which values are already in use,
---- every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
---- https://wiki.esoui.com/LibGroupBroadcast_IDs
---- @param handlerId number The ID of the handler this custom event should be associated with.
---- @param eventId number The custom event ID to use.
---- @param eventName string The custom event name to use.
---- @return function|nil FireEvent A function that can be called to request sending this custom event to other group members or nil if the declaration failed.
-function LGB:DeclareCustomEvent(handlerId, eventId, eventName)
-    return internal.protocolManager:DeclareCustomEvent(handlerId, eventId, eventName)
 end
 
 --- Registers a callback function to be called when a custom event is received.
@@ -52,20 +39,6 @@ end
 --- @return boolean success True if the callback was successfully unregistered, false otherwise.
 function LGB:UnregisterForCustomEvent(eventName, callback)
     return internal.protocolManager:UnregisterForCustomEvent(eventName, callback)
-end
-
---- Declares a new protocol with the given ID and name and returns the Protocol object instance.
----
---- The protocol id and name have to be globally unique between all addons. In order to coordinate which values are already in use,
---- every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
---- https://wiki.esoui.com/LibGroupBroadcast_IDs
---- @param handlerId number The ID of the handler this custom event should be associated with.
---- @param protocolId number The ID of the protocol to declare.
---- @param protocolName string The name of the protocol to declare.
---- @return Protocol|nil protocol The Protocol object instance that was declared or nil if the declaration failed.
---- @see Protocol
-function LGB:DeclareProtocol(handlerId, protocolId, protocolName)
-    return internal.protocolManager:DeclareProtocol(handlerId, protocolId, protocolName)
 end
 
 --- Creates and returns an ArrayField, which can be used to send the passed field multiple times.
@@ -180,6 +153,6 @@ function LGB.SetupMockInstance()
     return internal.SetupMockInstance()
 end
 
---[[ doc.lua end ]]--
+--[[ doc.lua end ]] --
 
 LGB:Initialize()

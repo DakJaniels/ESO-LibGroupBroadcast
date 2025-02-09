@@ -13,7 +13,7 @@ end
 --- @field callbackManager ZO_CallbackObject
 --- @field class table
 --- @field handlers table
---- @field authKey string
+--- @field authKey number
 --- @field gameApiWrapper GameApiWrapper
 --- @field dataMessageQueue MessageQueue
 --- @field handlerManager HandlerManager
@@ -35,14 +35,13 @@ LibGroupBroadcast = {
 
 local function SetupInstance(instance)
     instance.dataMessageQueue = internal.class.MessageQueue:New()
-    instance.handlerManager = internal.class.HandlerManager:New()
-    instance.protocolManager = internal.class.ProtocolManager:New(instance.callbackManager, instance.dataMessageQueue,
-        instance.handlerManager)
+    instance.protocolManager = internal.class.ProtocolManager:New(instance.callbackManager, instance.dataMessageQueue)
+    instance.handlerManager = internal.class.HandlerManager:New(instance.protocolManager)
     instance.broadcastManager = internal.class.BroadcastManager:New(instance.gameApiWrapper, instance.protocolManager,
         instance.callbackManager, instance.dataMessageQueue)
 end
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 --- @docType hidden
 --- @class LibGroupBroadcastMockInstance : LibGroupBroadcast
 --- @field callbackManager ZO_CallbackObject
@@ -51,7 +50,7 @@ end
 --- @field handlerManager HandlerManager
 --- @field protocolManager ProtocolManager
 --- @field broadcastManager BroadcastManager
---[[ doc.lua end ]]--
+--[[ doc.lua end ]] --
 
 --- @return LibGroupBroadcastMockInstance
 function internal.SetupMockInstance()
@@ -66,12 +65,8 @@ function internal.SetupMockInstance()
         return instance.handlerManager:RegisterHandler(...)
     end
 
-    function instance:GetHandler(...)
+    function instance:GetHandlerApi(...)
         return instance.handlerManager:GetHandlerApi(...)
-    end
-
-    function instance:DeclareCustomEvent(...)
-        return instance.protocolManager:DeclareCustomEvent(...)
     end
 
     function instance:RegisterForCustomEvent(...)
@@ -80,10 +75,6 @@ function internal.SetupMockInstance()
 
     function instance:UnregisterForCustomEvent(...)
         return instance.protocolManager:UnregisterForCustomEvent(...)
-    end
-
-    function instance:DeclareProtocol(...)
-        return instance.protocolManager:DeclareProtocol(...)
     end
 
     return instance --[[@as LibGroupBroadcastMockInstance]]

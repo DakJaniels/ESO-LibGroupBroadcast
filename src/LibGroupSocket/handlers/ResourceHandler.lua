@@ -111,7 +111,7 @@ local function Load()
         InitializeSaveData(data.handlers[type])
     end)
 
-    local groupResources = LGB:GetHandler("GroupResources")
+    local groupResources = LGB:GetHandlerApi("GroupResources")
     groupResources:RegisterForStaminaChanges(OnStaminaChanged)
     groupResources:RegisterForMagickaChanges(OnMagickaChanged)
 

@@ -6,6 +6,7 @@ if not Taneth then return end
 --- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local class = LGB.internal.class
+local Handler = class.Handler
 
 Taneth("LibGroupBroadcast", function()
     describe("PublicApi", function()
@@ -19,33 +20,32 @@ Taneth("LibGroupBroadcast", function()
             assert.equals("table", type(instance))
         end)
 
-        it("should have functions to register and get a handler table", function()
+        it("should have functions to register and get a handler's api", function()
             assert.equals("function", type(LGB.RegisterHandler))
-            assert.equals("function", type(LGB.GetHandler))
+            assert.equals("function", type(LGB.GetHandlerApi))
             local instance = LGB.SetupMockInstance()
-            local handler = {}
-            local handlerId = instance:RegisterHandler("test", "test", handler)
-            assert.equals("number", type(handlerId))
-            assert.equals(handler, instance:GetHandler("test"))
+            local handlerApi = {}
+            local handler = instance:RegisterHandler("test")
+            handler:SetApi(handlerApi)
+            assert.is_true(ZO_Object.IsInstanceOf(handler, Handler))
+            assert.equals(handlerApi, instance:GetHandlerApi("test"))
         end)
 
-        it("should have functions to declare, register and unregister for a custom event", function()
-            assert.equals("function", type(LGB.DeclareCustomEvent))
+        it("should have a way to declare and register for a custom event", function()
             assert.equals("function", type(LGB.RegisterForCustomEvent))
             assert.equals("function", type(LGB.UnregisterForCustomEvent))
             local instance = LGB.SetupMockInstance()
-            local handlerId = instance:RegisterHandler("test", "test")
-            local SendEvent = instance:DeclareCustomEvent(handlerId, 0, "test")
+            local handler = instance:RegisterHandler("test")
+            local SendEvent = handler:DeclareCustomEvent(0, "test")
             assert.is_not_nil(SendEvent)
             assert.is_true(instance:RegisterForCustomEvent("test", function() end))
             assert.is_true(instance:UnregisterForCustomEvent("test", function() end))
         end)
 
         it("should have a function to declare a protocol", function()
-            assert.equals("function", type(LGB.DeclareProtocol))
             local instance = LGB.SetupMockInstance()
-            local handlerId = instance:RegisterHandler("test", "test")
-            local protocol = instance:DeclareProtocol(handlerId, 0, "test")
+            local handler = instance:RegisterHandler("test")
+            local protocol = handler:DeclareProtocol(0, "test")
             assert.is_not_nil(protocol)
         end)
 

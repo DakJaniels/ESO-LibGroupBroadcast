@@ -47,6 +47,7 @@ FrameHandler.lua
 ProtocolManager.lua
 GameApiWrapper.lua
 BroadcastManager.lua
+Handler.lua
 HandlerManager.lua
 
 test/MockGameApiWrapper.lua

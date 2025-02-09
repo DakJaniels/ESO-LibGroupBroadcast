@@ -19,16 +19,16 @@ local PercentageField = LGB.internal.class.PercentageField
 local function SetupBroadcastManager()
     local callbackManager = ZO_CallbackObject:New()
     local dataMessageQueue = MessageQueue:New()
-    local handlerManager = HandlerManager:New()
     local gameApiWrapper = MockGameApiWrapper:New(callbackManager)
-    local protocolManager = ProtocolManager:New(callbackManager, dataMessageQueue, handlerManager)
+    local protocolManager = ProtocolManager:New(callbackManager, dataMessageQueue)
+    local handlerManager = HandlerManager:New(protocolManager)
     local broadcastManager = BroadcastManager:New(gameApiWrapper, protocolManager, callbackManager, dataMessageQueue)
     return {
         callbackManager = callbackManager,
         dataMessageQueue = dataMessageQueue,
-        handlerManager = handlerManager,
         gameApiWrapper = gameApiWrapper,
         protocolManager = protocolManager,
+        handlerManager = handlerManager,
         broadcastManager = broadcastManager,
     }
 end
@@ -55,8 +55,8 @@ Taneth("LibGroupBroadcast", function()
             end)
 
             local outgoingData = { text = string.rep("a", 255) }
-            local handlerId = internal.handlerManager:RegisterHandler("test", "test")
-            local protocol = internal.protocolManager:DeclareProtocol(handlerId, 0, "test")
+            local handler = internal.handlerManager:RegisterHandler("test")
+            local protocol = handler:DeclareProtocol(0, "test")
             assert.is_not_nil(protocol)
             protocol:AddField(StringField:New("text"))
             protocol:OnData(function(unitTag, data)
@@ -89,8 +89,8 @@ Taneth("LibGroupBroadcast", function()
                 }
             }
 
-            local handlerId = internal.handlerManager:RegisterHandler("test", "test")
-            local protocol = internal.protocolManager:DeclareProtocol(handlerId, 0, "test")
+            local handler = internal.handlerManager:RegisterHandler("test")
+            local protocol = handler:DeclareProtocol(0, "test")
             protocol:AddField(ArrayField:New(TableField:New("test", {
                 NumericField:New("numberA"),
                 NumericField:New("numberB"),
@@ -124,15 +124,15 @@ Taneth("LibGroupBroadcast", function()
                 done()
             end
 
-            local handlerId = internal.handlerManager:RegisterHandler("test", "test")
-            local FireEvent1 = protocolManager:DeclareCustomEvent(handlerId, 0, "testEvent1")
+            local handler = internal.handlerManager:RegisterHandler("test")
+            local FireEvent1 = handler:DeclareCustomEvent(0, "testEvent1")
             protocolManager:RegisterForCustomEvent("testEvent1", function(unitTag)
                 assert.equals("player", unitTag)
                 received.testEvent1 = true
                 FinishTest()
             end)
 
-            local FireEvent2 = protocolManager:DeclareCustomEvent(handlerId, 5, "testEvent2")
+            local FireEvent2 = handler:DeclareCustomEvent(5, "testEvent2")
             protocolManager:RegisterForCustomEvent("testEvent2", function(unitTag)
                 assert.equals("player", unitTag)
                 received.testEvent2 = true
@@ -147,7 +147,7 @@ Taneth("LibGroupBroadcast", function()
                 percentage = 1
             }
 
-            local protocol1 = protocolManager:DeclareProtocol(handlerId, 0, "test1")
+            local protocol1 = handler:DeclareProtocol(0, "test1")
             protocol1:AddField(StringField:New("text"))
             protocol1:AddField(NumericField:New("number"))
             protocol1:OnData(function(unitTag, data)
@@ -158,7 +158,7 @@ Taneth("LibGroupBroadcast", function()
             end)
             assert.is_true(protocol1:Finalize())
 
-            local protocol2 = protocolManager:DeclareProtocol(handlerId, 1, "test2")
+            local protocol2 = handler:DeclareProtocol(1, "test2")
             protocol2:AddField(PercentageField:New("percentage"))
             protocol2:OnData(function(unitTag, data)
                 assert.same(outgoingData2, data)

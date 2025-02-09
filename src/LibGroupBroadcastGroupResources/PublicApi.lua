@@ -2,7 +2,7 @@
 --
 -- SPDX-License-Identifier: Artistic-2.0
 
-local GroupResources = LibGroupBroadcast:GetHandler("GroupResources")
+local GroupResources = LibGroupBroadcast:GetHandlerApi("GroupResources")
 local stamina, magicka = GroupResources:Initialize()
 
 function GroupResources:RegisterForStaminaChanges(callback)

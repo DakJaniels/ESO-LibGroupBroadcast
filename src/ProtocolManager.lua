@@ -10,39 +10,32 @@ local Protocol = LGB.internal.class.Protocol
 
 local CUSTOM_EVENT_CALLBACK_PREFIX = "OnCustomEvent_"
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @class ProtocolManager
---- @field New fun(self: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue, handlerManager: HandlerManager): ProtocolManager
+--- @field New fun(self: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue): ProtocolManager
 local ProtocolManager = ZO_InitializingObject:Subclass()
 LGB.internal.class.ProtocolManager = ProtocolManager
 
-function ProtocolManager:Initialize(callbackManager, dataMessageQueue, handlerManager)
+function ProtocolManager:Initialize(callbackManager, dataMessageQueue)
     self.callbackManager = callbackManager
     self.dataMessageQueue = dataMessageQueue
-    self.handlerManager = handlerManager
     self.customEvents = {}
     self.customEventOptions = {}
     self.pendingCustomEvents = {}
     self.protocols = {}
 end
 
-function ProtocolManager:DeclareCustomEvent(handlerId, eventId, eventName, options)
-    local handler = self.handlerManager:GetHandler(handlerId)
-    assert(handler, "Handler not found.")
-
+function ProtocolManager:DeclareCustomEvent(handlerData, eventId, eventName, options)
     CustomEventControlMessage.AssertIsValidEventId(eventId)
-    assert(type(eventName) == "string", "eventName must be a string.")
+    assert(type(eventName) == "string" and eventName ~= "", "eventName must be a non-empty string.")
 
     local customEvents = self.customEvents
     if customEvents[eventId] then
-        logger:Warn("Custom event with ID %d already exists with name '%s'.", eventId, customEvents[eventId])
-        return nil
+        error(string.format("Custom event with ID %d already exists with name '%s'.", eventId, customEvents[eventId]))
     end
-
     if customEvents[eventName] then
-        logger:Warn("Custom event with name '%s' already exists for ID %d.", eventName, customEvents[eventName])
-        return nil
+        error(string.format("Custom event with name '%s' already exists for ID %d.", eventName, customEvents[eventName]))
     end
 
     customEvents[eventId] = eventName
@@ -50,7 +43,7 @@ function ProtocolManager:DeclareCustomEvent(handlerId, eventId, eventName, optio
     self.customEventOptions[eventId] = options or {}
     assert(type(self.customEventOptions[eventId]) == "table", "options must be a table.")
 
-    handler.customEvents[#handler.customEvents + 1] = { eventId, eventName }
+    handlerData.customEvents[#handlerData.customEvents + 1] = { eventId, eventName }
     return function()
         self.pendingCustomEvents[eventId] = true
         self.callbackManager:FireCallbacks("RequestSendData")
@@ -120,27 +113,24 @@ function ProtocolManager:HandleCustomEventMessages(unitTag, messages)
     return unhandledMessages
 end
 
-function ProtocolManager:DeclareProtocol(handlerId, protocolId, protocolName)
-    local handler = self.handlerManager:GetHandler(handlerId)
-    assert(handler, "Handler not found.")
+function ProtocolManager:DeclareProtocol(handlerData, protocolId, protocolName)
     assert(type(protocolId) == "number", "protocolId must be a number.")
     assert(type(protocolName) == "string", "protocolName must be a string.")
 
     local protocols = self.protocols
     if protocols[protocolId] then
-        logger:Warn("Protocol with ID %d already exists with name '%s'.", protocolId, protocols[protocolId]:GetName())
-        return nil
+        error(string.format("Protocol with ID %d already exists with name '%s'.", protocolId,
+            protocols[protocolId]:GetName()))
     end
-
     if protocols[protocolName] then
-        logger:Warn("Protocol with name '%s' already exists for ID %d.", protocolName, protocols[protocolName]:GetId())
-        return nil
+        error(string.format("Protocol with name '%s' already exists for ID %d.", protocolName,
+            protocols[protocolName]:GetId()))
     end
 
     local protocol = Protocol:New(protocolId, protocolName, self)
     protocols[protocolId] = protocol
     protocols[protocolName] = protocol
-    handler.protocols[#handler.protocols + 1] = { protocolId, protocolName }
+    handlerData.protocols[#handlerData.protocols + 1] = { protocolId, protocolName }
     return protocol
 end
 

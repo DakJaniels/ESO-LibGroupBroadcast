@@ -4,63 +4,83 @@
 
 --- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
+local Handler = LGB.internal.class.Handler
 local logger = LGB.internal.logger
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @class HandlerManager
---- @field New fun(self: HandlerManager): HandlerManager
+--- @field New fun(self: HandlerManager, protocolManager: ProtocolManager): HandlerManager
 local HandlerManager = ZO_InitializingObject:Subclass()
 LGB.internal.class.HandlerManager = HandlerManager
 
-function HandlerManager:Initialize()
-    self.handlers = {}
-    self.handlerByName = {}
-    self.handlerById = {}
+function HandlerManager:Initialize(protocolManager)
+    self.protocolManager = protocolManager
+    self.data = {}
+    self.dataByName = {}
+    self.dataByHandler = {}
 end
 
-function HandlerManager:RegisterHandler(handlerName, addonName, handlerApi)
-    assert(type(handlerName) == "string", "handlerName must be a string.")
-    assert(type(addonName) == "string", "addonName must be a string.")
-    assert(handlerApi == nil or type(handlerApi) == "table", "handlerApi must be a table or nil.")
+function HandlerManager:RegisterHandler(addonName, handlerName)
+    assert(type(addonName) == "string" and addonName ~= "", "addonName must be a non-empty string.")
+    assert(handlerName == nil or (type(handlerName) == "string" and handlerName ~= ""),
+        "handlerName must be a non-empty string.")
 
-    local handler = self.handlerByName[handlerName]
-    if handler then
-        logger:Warn("Handler '%s' has already been registered by '%s'.", handlerName, handler.addonName)
-        return nil
+    local handlerData
+    if handlerName then
+        assert(handlerName ~= addonName, "handlerName and addonName must not be the same.")
+        handlerData = self.dataByName[handlerName]
+        if handlerData then
+            error("Handler name '" ..
+                handlerName .. "' has already been registered by '" .. handlerData.addonName .. "'.")
+        end
     end
 
-    local handlerId = self:GenerateId()
-    handler = {
-        handlerId = handlerId,
+    handlerData = self.dataByName[addonName]
+    if handlerData then
+        error("Addon '" .. addonName .. "' has already been registered as a handler.")
+    end
+
+    handlerData = {
         handlerName = handlerName,
         addonName = addonName,
-        api = handlerApi,
         customEvents = {},
         protocols = {},
     }
-    self.handlers[#self.handlers + 1] = handler
-    self.handlerByName[handlerName] = handler
-    self.handlerById[handlerId] = handler
-    return handlerId
+
+    local handler = Handler:New({
+        DeclareCustomEvent = function(_, ...)
+            return self.protocolManager:DeclareCustomEvent(handlerData, ...)
+        end,
+        DeclareProtocol = function(_, ...)
+            return self.protocolManager:DeclareProtocol(handlerData, ...)
+        end,
+        SetApi = function(_, api)
+            handlerData.api = api
+        end,
+        SetDisplayName = function(_, displayName)
+            handlerData.displayName = displayName
+        end,
+        SetDescription = function(_, description)
+            handlerData.description = description
+        end,
+    })
+    self.data[#self.data + 1] = handlerData
+    if handlerName then
+        self.dataByName[handlerName] = handlerData
+    end
+    self.dataByName[addonName] = handlerData
+    self.dataByHandler[handler] = handlerData
+    return handler
 end
 
 function HandlerManager:GetHandlerApi(handlerName)
-    local handler = self.handlerByName[handlerName]
-    if handler then
-        return handler.api
+    local handlerData = self.dataByName[handlerName]
+    if handlerData then
+        return handlerData.api
     end
 end
 
-function HandlerManager:GetHandler(handlerId)
-    return self.handlerById[handlerId]
-end
-
-function HandlerManager:GenerateId()
-    assert(#self.handlerById < 1000000, "Too many handlers registered")
-    local id
-    repeat
-        id = math.random(1, 1000000)
-    until not self.handlerById[id]
-    return id
+function HandlerManager:GetHandlerData(handler)
+    return self.dataByHandler[handler]
 end
