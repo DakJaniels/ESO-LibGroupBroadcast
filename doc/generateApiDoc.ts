@@ -50,11 +50,11 @@ INCLUDED_FILES.forEach((file) => {
     let inFunction = false;
     lines.forEach((line) => {
         if (!isRelevantPart) {
-            if (line.startsWith('--[[ doc.lua begin ]]--')) {
+            if (line.startsWith('--[[ doc.lua begin ]]')) {
                 isRelevantPart = true;
             }
             return;
-        } else if (line.startsWith('--[[ doc.lua end ]]--')) {
+        } else if (line.startsWith('--[[ doc.lua end ]]')) {
             isRelevantPart = false;
             return;
         } else if (line.startsWith('--- @docType') || line.startsWith('LGB.internal')) {
