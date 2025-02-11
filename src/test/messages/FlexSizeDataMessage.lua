@@ -44,6 +44,14 @@ Taneth("LibGroupBroadcast", function()
             assert.equals(6 * 8 + 1, data.cursor)
         end)
 
+        it("should calculate the number of bytes to send correctly when the available bytes are less than the maximum", function()
+            local data = BinaryBuffer:New(8 * 100)
+            local message = FlexSizeDataMessage:New(511, data)
+            local bytesFree = 10
+            message:UpdateStatus(bytesFree)
+            assert.equals(bytesFree, message:GetBytesToSend())
+        end)
+
         it("should calculate the correct size and continuation status based on data size", function()
             local data = BinaryBuffer:New(8)
             local message = FlexSizeDataMessage:New(511, data)

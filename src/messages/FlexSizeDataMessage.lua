@@ -13,7 +13,7 @@ LGB.internal.class.FlexSizeDataMessage = FlexSizeDataMessage
 local NUM_ID_BITS = 9
 local NUM_LENGTH_BITS = 5
 local HEADER_BYTES = 2
-local MAX_NUM_BYTES = 28
+local MAX_NUM_BYTES = 30
 
 function FlexSizeDataMessage:Initialize(id, data, options)
     DataMessageBase.Initialize(self, id, data, NUM_ID_BITS, nil, options)
@@ -33,10 +33,11 @@ function FlexSizeDataMessage:HasContinuation()
 end
 
 function FlexSizeDataMessage:UpdateStatus(availableBytes)
+    availableBytes = math.min(availableBytes, MAX_NUM_BYTES) - HEADER_BYTES
     local remainingBytes = self.data:GetByteLength() - self.bytesSent
     self.isContinued = self.bytesSent > 0
-    self.hasContinuation = remainingBytes > availableBytes or remainingBytes > MAX_NUM_BYTES
-    self.bytesToSend = math.min(remainingBytes, availableBytes, MAX_NUM_BYTES)
+    self.hasContinuation = remainingBytes > availableBytes
+    self.bytesToSend = math.min(remainingBytes, availableBytes)
     self.bytesSent = self.bytesSent + self.bytesToSend
     self.statusUpdated = true
 end
