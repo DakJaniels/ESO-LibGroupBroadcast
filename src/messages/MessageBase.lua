@@ -6,6 +6,7 @@
 local LGB = LibGroupBroadcast
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
 
+--- @class MessageBase
 local MessageBase = ZO_InitializingObject:Subclass()
 LGB.internal.class.MessageBase = MessageBase
 

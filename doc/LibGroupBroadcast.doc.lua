@@ -664,10 +664,12 @@ local MessageQueue = ZO_InitializingObject:Subclass()
 
 function MessageQueue:Initialize() end
 
+--- @param message DataMessageBase
 function MessageQueue:EnqueueMessage(message) end
 
 function MessageQueue:DequeueMessage(i) end
 
+--- @param protocolId number
 function MessageQueue:DeleteMessagesByProtocolId(protocolId) end
 
 function MessageQueue:GetSize() end
@@ -698,6 +700,9 @@ function HandlerManager:GetHandlerData(handler) end
 --- @field New fun(self: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue): ProtocolManager
 local ProtocolManager = ZO_InitializingObject:Subclass()
 
+--- @private
+--- @param callbackManager ZO_CallbackObject
+--- @param dataMessageQueue MessageQueue
 function ProtocolManager:Initialize(callbackManager, dataMessageQueue) end
 
 function ProtocolManager:DeclareCustomEvent(handlerData, eventId, eventName, options) end

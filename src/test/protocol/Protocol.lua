@@ -7,6 +7,8 @@ if not Taneth then return end
 local LGB = LibGroupBroadcast
 --- @class Protocol
 local Protocol = LGB.internal.class.Protocol
+local MessageQueue = LGB.internal.class.MessageQueue
+local ProtocolManager = LGB.internal.class.ProtocolManager
 local FlagField = LGB.internal.class.FlagField
 local NumericField = LGB.internal.class.NumericField
 local VariantField = LGB.internal.class.VariantField
@@ -78,6 +80,53 @@ Taneth("LibGroupBroadcast", function()
             protocol:Receive("group2", message)
             assert.equals("group2", receivedUnitTag)
             assert.equals(1, receivedData.test.number)
+        end)
+
+        it("should automatically delete queued messages on send", function()
+            local queue = MessageQueue:New()
+            local manager = ProtocolManager:New(ZO_CallbackObject:New(), queue)
+            local protocol1 = manager:DeclareProtocol({ protocols = {} }, 0, "test1")
+            protocol1:AddField(NumericField:New("number"))
+            protocol1:OnData(function() end)
+            assert.is_true(protocol1:Finalize())
+
+            local protocol2 = manager:DeclareProtocol({ protocols = {} }, 1, "test2")
+            protocol2:AddField(NumericField:New("number"))
+            protocol2:OnData(function() end)
+            assert.is_true(protocol2:Finalize())
+
+            assert.is_true(protocol1:Send({ number = 1 }))
+            assert.is_true(protocol2:Send({ number = 2 }))
+            assert.is_true(protocol1:Send({ number = 3 }))
+
+            assert.equals(2, queue:GetSize())
+            assert.equals("00 00 00 02", queue:GetOldestRelevantMessage():GetData():ToHexString())
+            assert.equals("00 00 00 03", queue:GetOldestRelevantMessage():GetData():ToHexString())
+            assert.is_nil(queue:GetOldestRelevantMessage())
+        end)
+
+        it("should not delete queued messages on send when the option is turned off", function()
+            local queue = MessageQueue:New()
+            local manager = ProtocolManager:New(ZO_CallbackObject:New(), queue)
+            local protocol1 = manager:DeclareProtocol({ protocols = {} }, 0, "test1")
+            protocol1:AddField(NumericField:New("number"))
+            protocol1:OnData(function() end)
+            assert.is_true(protocol1:Finalize())
+
+            local protocol2 = manager:DeclareProtocol({ protocols = {} }, 1, "test2")
+            protocol2:AddField(NumericField:New("number"))
+            protocol2:OnData(function() end)
+            assert.is_true(protocol2:Finalize())
+
+            assert.is_true(protocol1:Send({ number = 1 }, { replaceQueuedMessages = false }))
+            assert.is_true(protocol2:Send({ number = 2 }, { replaceQueuedMessages = false }))
+            assert.is_true(protocol1:Send({ number = 3 }, { replaceQueuedMessages = false }))
+
+            assert.equals(3, queue:GetSize())
+            assert.equals("00 00 00 01", queue:GetOldestRelevantMessage():GetData():ToHexString())
+            assert.equals("00 00 00 02", queue:GetOldestRelevantMessage():GetData():ToHexString())
+            assert.equals("00 00 00 03", queue:GetOldestRelevantMessage():GetData():ToHexString())
+            assert.is_nil(queue:GetOldestRelevantMessage())
         end)
     end)
 end)

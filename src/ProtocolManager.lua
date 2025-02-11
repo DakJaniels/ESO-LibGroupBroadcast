@@ -17,6 +17,9 @@ local CUSTOM_EVENT_CALLBACK_PREFIX = "OnCustomEvent_"
 local ProtocolManager = ZO_InitializingObject:Subclass()
 LGB.internal.class.ProtocolManager = ProtocolManager
 
+--- @private
+--- @param callbackManager ZO_CallbackObject
+--- @param dataMessageQueue MessageQueue
 function ProtocolManager:Initialize(callbackManager, dataMessageQueue)
     self.callbackManager = callbackManager
     self.dataMessageQueue = dataMessageQueue

@@ -6,14 +6,14 @@
 local LGB = LibGroupBroadcast
 
 local function byTimeAddedDesc(a, b)
-    return a:GetLastAdded() > b:GetLastAdded()
+    return a:GetLastQueueId() > b:GetLastQueueId()
 end
 
 local function bySizeDescAndTimeAddedDesc(a, b)
     local aSize = a:GetSize()
     local bSize = b:GetSize()
     if aSize == bSize then
-        return a:GetLastAdded() > b:GetLastAdded()
+        return a:GetLastQueueId() > b:GetLastQueueId()
     end
     return aSize > bSize
 end
@@ -30,6 +30,7 @@ function MessageQueue:Initialize()
     self.messages = {}
 end
 
+--- @param message DataMessageBase
 function MessageQueue:EnqueueMessage(message)
     if message:ShouldDeleteQueuedMessages() then
         self:DeleteMessagesByProtocolId(message:GetId())
@@ -49,6 +50,7 @@ function MessageQueue:DequeueMessage(i)
     return message
 end
 
+--- @param protocolId number
 function MessageQueue:DeleteMessagesByProtocolId(protocolId)
     for i = #self.messages, 1, -1 do
         if self.messages[i]:GetId() == protocolId then

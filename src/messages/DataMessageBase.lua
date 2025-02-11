@@ -6,6 +6,7 @@
 local LGB = LibGroupBroadcast
 local MessageBase = LGB.internal.class.MessageBase
 
+--- @class DataMessageBase : MessageBase
 local DataMessageBase = MessageBase:Subclass()
 LGB.internal.class.DataMessageBase = DataMessageBase
 
@@ -31,10 +32,10 @@ function DataMessageBase:SetDequeued(reason)
     end
 end
 
-function DataMessageBase:GetLastAdded()
+function DataMessageBase:GetLastQueueId()
     local history = self.queueHistory[#self.queueHistory]
     if history then
-        return history.added
+        return history.id
     end
     return 0
 end
