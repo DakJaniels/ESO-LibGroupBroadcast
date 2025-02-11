@@ -6,7 +6,7 @@ if not Taneth then return end
 local LGB = LibGroupBroadcast
 local UIReload = LGB:GetHandlerApi("UIReload")
 
-Taneth("LibGroupBroadcastUIReload", function()
+Taneth("LibGroupUIReload", function()
     it("should be able to register and unregister for ui reloads", function()
         assert.equals("function", type(UIReload.RegisterForUIReload))
         assert.equals("function", type(UIReload.UnregisterForUIReload))
