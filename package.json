@@ -3,7 +3,7 @@
         "ts-node": "^10.9.2"
     },
     "scripts": {
-        "test": "Taneth ../LibDebugLogger/src/LibDebugLogger.txt src/LibGroupBroadcast.addon src/LibGroupBroadcastGroupResources/LibGroupBroadcastGroupResources.addon src/LibGroupBroadcastUIReload/LibGroupBroadcastUIReload.addon LibGroupBroadcast LibGroupBroadcastGroupResources LibGroupBroadcastUIReload",
+        "test": "Taneth ../LibDebugLogger/src/LibDebugLogger.txt src/LibGroupBroadcast.addon src/LibGroupResources/LibGroupResources.addon src/LibGroupBroadcastUIReload/LibGroupBroadcastUIReload.addon LibGroupBroadcast LibGroupResources LibGroupBroadcastUIReload",
         "doc": "ts-node doc/generateApiReference.ts && ts-node doc/generateApiDoc.ts"
     }
 }

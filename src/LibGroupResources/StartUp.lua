@@ -5,7 +5,7 @@
 local LGB = LibGroupBroadcast
 
 local GroupResources = {}
-local handler = LGB:RegisterHandler("LibGroupBroadcastGroupResources", "GroupResources")
+local handler = LGB:RegisterHandler("LibGroupResources", "GroupResources")
 handler:SetDisplayName("Group Resources")
 handler:SetDescription("Sends information about your stamina and magicka to other group members.")
 handler:SetApi(GroupResources)

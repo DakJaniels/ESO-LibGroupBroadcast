@@ -8,7 +8,7 @@
 ## APIVersion: @API_VERSION@
 ## AddOnVersion: @BUILD_NUMBER@
 ## IsLibrary: true
-## DependsOn: LibAddonMenu-2.0 LibDebugLogger LibGroupBroadcast LibGroupBroadcastGroupResources
+## DependsOn: LibAddonMenu-2.0 LibDebugLogger LibGroupBroadcast LibGroupResources
 ## OptionalDependsOn: LibStub
 ## SavedVariables: LibGroupSocket_Data
 

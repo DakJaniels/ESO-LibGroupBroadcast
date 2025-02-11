@@ -22,7 +22,7 @@ local function TeardownResource(handler)
     EVENT_MANAGER:UnregisterForEvent(namespace, EVENT_GROUP_MEMBER_LEFT)
 end
 
-Taneth("LibGroupBroadcastGroupResources", function()
+Taneth("LibGroupResources", function()
     describe("GroupResourceManager", function()
         it("should be able to create a new instance", function()
             local resource = SetupResource(1, "Stamina", COMBAT_MECHANIC_FLAGS_STAMINA)
