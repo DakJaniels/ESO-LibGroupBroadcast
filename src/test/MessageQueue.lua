@@ -8,6 +8,13 @@ local LGB = LibGroupBroadcast
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
 local MessageQueue = LGB.internal.class.MessageQueue
 local FixedSizeDataMessage = LGB.internal.class.FixedSizeDataMessage
+local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
+
+local function CreateMessageWithByteSize(id, byteSize, options)
+    local buffer = BinaryBuffer:New((byteSize - 2) * 8)
+    local message = FlexSizeDataMessage:New(id, buffer, options)
+    return message
+end
 
 Taneth("LibGroupBroadcast", function()
     describe("MessageQueue", function()
@@ -29,11 +36,9 @@ Taneth("LibGroupBroadcast", function()
         it("should be able to return the oldest queued message", function()
             local queue = MessageQueue:New()
             local expected = FixedSizeDataMessage:New(1)
-            expected.GetLastAdded = function() return 1 end
             queue:EnqueueMessage(expected)
             for i = 2, 5 do
                 local message = FixedSizeDataMessage:New(i)
-                message.GetLastAdded = function() return i end
                 queue:EnqueueMessage(message)
             end
 
@@ -43,17 +48,14 @@ Taneth("LibGroupBroadcast", function()
 
         it("should be able to return the oldest queued combat relevant message", function()
             local queue = MessageQueue:New()
-            local expected = FixedSizeDataMessage:New(1, BinaryBuffer:New(7), { isRelevantInCombat = true })
-            expected.GetLastAdded = function() return 7 end
-            queue:EnqueueMessage(expected)
-            for i = 2, 5 do
-                local message = FixedSizeDataMessage:New(i, BinaryBuffer:New(7), { isRelevantInCombat = true })
-                message.GetLastAdded = function() return 6 + i end
+            for i = 1, 5 do
+                local message = FixedSizeDataMessage:New(i, BinaryBuffer:New(7))
                 queue:EnqueueMessage(message)
             end
-            for i = 6, 10 do
-                local message = FixedSizeDataMessage:New(i, BinaryBuffer:New(7))
-                message.GetLastAdded = function() return i end
+            local expected = FixedSizeDataMessage:New(6, BinaryBuffer:New(7), { isRelevantInCombat = true })
+            queue:EnqueueMessage(expected)
+            for i = 7, 10 do
+                local message = FixedSizeDataMessage:New(i, BinaryBuffer:New(7), { isRelevantInCombat = true })
                 queue:EnqueueMessage(message)
             end
 
@@ -65,11 +67,9 @@ Taneth("LibGroupBroadcast", function()
             function()
                 local queue = MessageQueue:New()
                 local expected = FixedSizeDataMessage:New(1)
-                expected.GetLastAdded = function() return 1 end
                 queue:EnqueueMessage(expected)
                 for i = 2, 5 do
                     local message = FixedSizeDataMessage:New(i)
-                    message.GetLastAdded = function() return i end
                     queue:EnqueueMessage(message)
                 end
 
@@ -80,11 +80,14 @@ Taneth("LibGroupBroadcast", function()
         it("should be able to return the smallest queued message",
             function()
                 local queue = MessageQueue:New()
-                local expected = FixedSizeDataMessage:New(1)
-                expected.GetSize = function() return 1 end
+                for i = 1, 3 do
+                    local message = CreateMessageWithByteSize(i, 4 + i)
+                    queue:EnqueueMessage(message)
+                end
+                local expected = CreateMessageWithByteSize(4, 3)
                 queue:EnqueueMessage(expected)
-                for i = 2, 5 do
-                    local message = FixedSizeDataMessage:New(i)
+                for i = 5, 7 do
+                    local message = CreateMessageWithByteSize(i, 4 + i)
                     queue:EnqueueMessage(message)
                 end
 
@@ -94,16 +97,16 @@ Taneth("LibGroupBroadcast", function()
 
         it("should be able to return the smallest queued combat relevant message", function()
             local queue = MessageQueue:New()
-            local expected = FixedSizeDataMessage:New(1, BinaryBuffer:New(7), { isRelevantInCombat = true })
-            expected.GetSize = function() return 1 end
-            queue:EnqueueMessage(expected)
-            for i = 2, 5 do
-                local message = FixedSizeDataMessage:New(i, BinaryBuffer:New(7), { isRelevantInCombat = true })
+            for i = 1, 3 do
+                local message = CreateMessageWithByteSize(i, 4 + i, { isRelevantInCombat = true })
                 queue:EnqueueMessage(message)
             end
-            for i = 6, 10 do
-                local message = FixedSizeDataMessage:New(i, BinaryBuffer:New(7))
-                message.GetSize = function() return 1 end
+            local message = CreateMessageWithByteSize(4, 3)
+            queue:EnqueueMessage(message)
+            local expected = CreateMessageWithByteSize(5, 3, { isRelevantInCombat = true })
+            queue:EnqueueMessage(expected)
+            for i = 6, 8 do
+                local message = CreateMessageWithByteSize(i, 4 + i, { isRelevantInCombat = true })
                 queue:EnqueueMessage(message)
             end
 
@@ -114,11 +117,14 @@ Taneth("LibGroupBroadcast", function()
         it("should be able to return the smallest queued message when in combat with no queued combat relevant messages",
             function()
                 local queue = MessageQueue:New()
-                local expected = FixedSizeDataMessage:New(1)
-                expected.GetSize = function() return 1 end
+                for i = 1, 3 do
+                    local message = CreateMessageWithByteSize(i, 4 + i)
+                    queue:EnqueueMessage(message)
+                end
+                local expected = CreateMessageWithByteSize(4, 3)
                 queue:EnqueueMessage(expected)
-                for i = 2, 5 do
-                    local message = FixedSizeDataMessage:New(i)
+                for i = 5, 7 do
+                    local message = CreateMessageWithByteSize(i, 4 + i)
                     queue:EnqueueMessage(message)
                 end
 
@@ -129,19 +135,16 @@ Taneth("LibGroupBroadcast", function()
         it("should be able to return the oldest and smallest queued message",
             function()
                 local queue = MessageQueue:New()
-                local expected = FixedSizeDataMessage:New(1)
-                expected.GetLastAdded = function() return 1 end
-                expected.GetSize = function() return 1 end
+                local expected = CreateMessageWithByteSize(1, 3)
                 queue:EnqueueMessage(expected)
                 for i = 2, 4 do
-                    local message = FixedSizeDataMessage:New(i)
-                    message.GetLastAdded = function() return i end
-                    message.GetSize = function() return 1 end
+                    local message = CreateMessageWithByteSize(i, 2 + i)
                     queue:EnqueueMessage(message)
                 end
-                for i = 5, 6 do
-                    local message = FixedSizeDataMessage:New(i)
-                    message.GetLastAdded = function() return 0 end
+                local message = CreateMessageWithByteSize(4, 3)
+                queue:EnqueueMessage(message)
+                for i = 6, 8 do
+                    local message = CreateMessageWithByteSize(i, 2 + i)
                     queue:EnqueueMessage(message)
                 end
 
@@ -152,35 +155,37 @@ Taneth("LibGroupBroadcast", function()
         it("should be able to return the oldest queued message with the exact size",
             function()
                 local queue = MessageQueue:New()
-                local expected = FixedSizeDataMessage:New(1)
-                expected.GetSize = function() return 1 end
+                for i = 1, 3 do
+                    local message = CreateMessageWithByteSize(i, 2 + i)
+                    message:UpdateStatus(100)
+                    queue:EnqueueMessage(message)
+                end
+                local expected = CreateMessageWithByteSize(4, 3)
                 queue:EnqueueMessage(expected)
-                for i = 2, 5 do
-                    local message = FixedSizeDataMessage:New(i)
+                for i = 5, 7 do
+                    local message = CreateMessageWithByteSize(i, 2 + i)
                     queue:EnqueueMessage(message)
                 end
 
-                local actual = queue:GetNextRelevantEntryWithExactSize(1)
+                local actual = queue:GetNextRelevantEntryWithExactSize(3)
                 assert.equals(expected, actual)
             end)
 
         it("should be able to return the oldest queued combat relevant message with the exact size",
             function()
                 local queue = MessageQueue:New()
-                local expected = FixedSizeDataMessage:New(1, BinaryBuffer:New(7), { isRelevantInCombat = true })
-                expected.GetSize = function() return 1 end
+                local expected = CreateMessageWithByteSize(1, 3, { isRelevantInCombat = true })
                 queue:EnqueueMessage(expected)
                 for i = 2, 5 do
-                    local message = FixedSizeDataMessage:New(i, BinaryBuffer:New(7), { isRelevantInCombat = true })
+                    local message = CreateMessageWithByteSize(i, 3, { isRelevantInCombat = true })
                     queue:EnqueueMessage(message)
                 end
                 for i = 6, 10 do
-                    local message = FixedSizeDataMessage:New(i)
-                    message.GetSize = function() return 1 end
+                    local message = CreateMessageWithByteSize(i, 3)
                     queue:EnqueueMessage(message)
                 end
 
-                local actual = queue:GetNextRelevantEntryWithExactSize(1, true)
+                local actual = queue:GetNextRelevantEntryWithExactSize(3, true)
                 assert.equals(expected, actual)
             end)
 
