@@ -10,9 +10,10 @@ local logger = LGB.internal.logger
 
 local AVAILABLE_OPTIONS = {
     numBits = true,
+    maxValue = true,
 }
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @docType options
 --- @class EnumFieldOptions: FieldOptionsBase
