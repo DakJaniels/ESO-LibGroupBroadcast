@@ -73,8 +73,7 @@ Taneth("LibGroupBroadcast", function()
 
         it.async("should be able to send and receive an array of tables", function(done)
             local internal = SetupBroadcastManager()
-            local manager = internal.broadcastManager
-            manager.IsInCombat = function() return false end
+            internal.gameApiWrapper:SetInCombat(false)
 
             local outgoingData = {
                 test = {

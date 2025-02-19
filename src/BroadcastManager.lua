@@ -37,7 +37,7 @@ end
 function BroadcastManager:RequestSendData()
     if self.sendHandle then return end
 
-    local inCombat = self:IsInCombat()
+    local inCombat = self.gameApiWrapper:IsInCombat()
     local hasCombatRelevantMessages = self.protocolManager:HasRelevantMessages(true)
     if inCombat and not hasCombatRelevantMessages then return end
 
@@ -101,14 +101,10 @@ function BroadcastManager:FillSendBuffer(inCombat)
     return frameHandler
 end
 
-function BroadcastManager:IsInCombat()
-    return self.gameApiWrapper:IsInCombat()
-end
-
 function BroadcastManager:SendData()
     self.sendHandle = nil
 
-    local inCombat = self:IsInCombat()
+    local inCombat = self.gameApiWrapper:IsInCombat()
     local frameHandler = self:FillSendBuffer(inCombat)
     if frameHandler:HasData() then
         local data = frameHandler:Serialize()
