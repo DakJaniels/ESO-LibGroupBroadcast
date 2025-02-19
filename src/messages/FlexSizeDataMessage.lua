@@ -7,6 +7,7 @@ local LGB = LibGroupBroadcast
 local DataMessageBase = LGB.internal.class.DataMessageBase
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
 
+--- @class FlexSizeDataMessage : DataMessageBase
 local FlexSizeDataMessage = DataMessageBase:Subclass()
 LGB.internal.class.FlexSizeDataMessage = FlexSizeDataMessage
 

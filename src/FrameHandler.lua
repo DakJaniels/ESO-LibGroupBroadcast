@@ -43,6 +43,10 @@ function FrameHandler:Reset()
     self.bytesFree = MAX_BROADCAST_MESSAGE_BYTES - HEADER_BYTES
 end
 
+function FrameHandler:ClearUnfinishedMessages()
+    ZO_ClearTable(self.unfinishedFlexMessagesById)
+end
+
 function FrameHandler:GetBytesFree()
     return self.bytesFree
 end

@@ -6,22 +6,17 @@ if not Taneth then return end
 --- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 local ProtocolManager = LGB.internal.class.ProtocolManager
-local HandlerManager = LGB.internal.class.HandlerManager
 local Protocol = LGB.internal.class.Protocol
 local FlagField = LGB.internal.class.FlagField
 local NumericField = LGB.internal.class.NumericField
 local OptionalField = LGB.internal.class.OptionalField
-local MessageQueue = LGB.internal.class.MessageQueue
 local FixedSizeDataMessage = LGB.internal.class.FixedSizeDataMessage
 local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
 
 local function CreateProtocolManager()
-    local callbackManager = ZO_CallbackObject:New()
-    local dataMessageQueue = MessageQueue:New()
-    local protocolManager = ProtocolManager:New(callbackManager, dataMessageQueue)
-    local handlerManager = HandlerManager:New(protocolManager)
-    local handler = handlerManager:RegisterHandler("test")
-    return protocolManager, handler
+    local internal = LGB.SetupMockInstance()
+    local handler = internal.handlerManager:RegisterHandler("test")
+    return internal.protocolManager, handler
 end
 
 Taneth("LibGroupBroadcast", function()
@@ -107,8 +102,10 @@ Taneth("LibGroupBroadcast", function()
             local _, handler = CreateProtocolManager()
             local protocol1 = assert.has_no_error(function() return handler:DeclareProtocol(0, "test1") end)
             assert.is_true(ZO_Object.IsInstanceOf(protocol1, Protocol))
-            assert.has_error("Protocol with ID 0 already exists with name 'test1'.", function() return handler:DeclareProtocol(0, "test2") end)
-            assert.has_error("Protocol with name 'test1' already exists for ID 0.", function() return handler:DeclareProtocol(1, "test1") end)
+            assert.has_error("Protocol with ID 0 already exists with name 'test1'.",
+                function() return handler:DeclareProtocol(0, "test2") end)
+            assert.has_error("Protocol with name 'test1' already exists for ID 0.",
+                function() return handler:DeclareProtocol(1, "test1") end)
         end)
 
         it("should be able to generate and handle data messages", function()
@@ -129,7 +126,7 @@ Taneth("LibGroupBroadcast", function()
                 protocol1IncomingUnitTag = unitTag
                 protocol1IncomingData = data
             end)
-            protocol1:Finalize()
+            assert.is_true(protocol1:Finalize())
 
             local protocol2 = handler:DeclareProtocol(1, "test2")
             protocol2:AddField(FlagField:New("flagC"))
@@ -138,7 +135,7 @@ Taneth("LibGroupBroadcast", function()
                 protocol2IncomingUnitTag = unitTag
                 protocol2IncomingData = data
             end)
-            protocol2:Finalize()
+            assert.is_true(protocol2:Finalize())
 
             assert.is_true(protocol1:Send({ flagA = true, flagB = false }))
             assert.equals(1, triggered)
@@ -170,7 +167,7 @@ Taneth("LibGroupBroadcast", function()
             protocol:AddField(NumericField:New("numberA", { numBits = 6 }))
             protocol:AddField(OptionalField:New(NumericField:New("numberB")))
             protocol:OnData(function() end)
-            protocol:Finalize()
+            assert.is_true(protocol:Finalize())
 
             assert.is_true(protocol:Send({ numberA = 1 }))
             local message1 = manager.dataMessageQueue:DequeueMessage()
@@ -179,6 +176,26 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(protocol:Send({ numberA = 2, numberB = 3 }))
             local message2 = manager.dataMessageQueue:DequeueMessage()
             assert.is_true(ZO_Object.IsInstanceOf(message2, FlexSizeDataMessage))
+        end)
+
+        it("should clear all messages and custom events", function()
+            local manager, handler = CreateProtocolManager()
+
+            local protocol = handler:DeclareProtocol(0, "test")
+            protocol:AddField(NumericField:New("numberA", { numBits = 6 }))
+            protocol:AddField(OptionalField:New(NumericField:New("numberB")))
+            protocol:OnData(function() end)
+            assert.is_true(protocol:Finalize())
+
+            local fireEvent = handler:DeclareCustomEvent(0, "test")
+            assert.is_not_nil(fireEvent)
+
+            fireEvent()
+            assert.is_true(protocol:Send({ numberA = 1 }))
+
+            assert.is_true(manager:HasRelevantMessages())
+            manager:ClearQueuedMessages()
+            assert.is_false(manager:HasRelevantMessages())
         end)
     end)
 end)

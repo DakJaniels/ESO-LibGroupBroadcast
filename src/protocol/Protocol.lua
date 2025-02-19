@@ -17,16 +17,20 @@ local logger = LGB.internal.logger
 --- @field isRelevantInCombat boolean? Whether the protocol is relevant in combat.
 --- @field replaceQueuedMessages boolean? Whether to replace already queued messages with the same protocol ID when Send is called.
 
+--- @class ProtocolManagerProxy
+--- @field IsGrouped fun(self: ProtocolManagerProxy): boolean
+--- @field QueueDataMessage fun(self: ProtocolManagerProxy, message: FixedSizeDataMessage | FlexSizeDataMessage)
+
 --- @class Protocol
 --- @field protected id number
 --- @field protected name string
---- @field protected manager ProtocolManager
+--- @field protected manager ProtocolManagerProxy
 --- @field protected fields FieldBase[]
 --- @field protected fieldsByLabel table<string, FieldBase>
 --- @field protected finalized boolean
 --- @field protected onDataCallback fun(unitTag: string, data: table)
 --- @field protected options ProtocolOptions
---- @field protected New fun(self: Protocol, id: number, name: string, manager: ProtocolManager): Protocol
+--- @field protected New fun(self: Protocol, id: number, name: string, manager: ProtocolManagerProxy): Protocol
 local Protocol = ZO_InitializingObject:Subclass()
 LGB.internal.class.Protocol = Protocol
 
@@ -148,6 +152,11 @@ end
 --- @return boolean success Whether the message was successfully queued.
 function Protocol:Send(values, options)
     assert(self.finalized, "Protocol '" .. self.name .. "' has not been finalized")
+
+    if not self.manager:IsGrouped() then
+        logger:Debug("Tried to send data for protocol '%s' while not grouped", self.name)
+        return false
+    end
 
     local data = BinaryBuffer:New(7)
     for i = 1, #self.fields do

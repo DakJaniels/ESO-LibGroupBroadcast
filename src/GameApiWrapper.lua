@@ -43,6 +43,10 @@ function GameApiWrapper:IsInCombat()
     return IsUnitInCombat("player")
 end
 
+function GameApiWrapper:IsGrouped()
+    return IsUnitGrouped("player")
+end
+
 function GameApiWrapper:BroadcastData(buffer)
     local values = buffer:ToUInt32Array()
     return BroadcastAddOnDataToGroup(keyVault[self], unpack(values))

@@ -6,6 +6,7 @@
 local LGB = LibGroupBroadcast
 local DataMessageBase = LGB.internal.class.DataMessageBase
 
+--- @class FixedSizeDataMessage : DataMessageBase
 local FixedSizeDataMessage = DataMessageBase:Subclass()
 LGB.internal.class.FixedSizeDataMessage = FixedSizeDataMessage
 

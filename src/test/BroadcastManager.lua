@@ -5,43 +5,22 @@
 if not Taneth then return end
 --- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
-local ProtocolManager = LGB.internal.class.ProtocolManager
-local HandlerManager = LGB.internal.class.HandlerManager
-local MockGameApiWrapper = LGB.internal.class.MockGameApiWrapper
 local BroadcastManager = LGB.internal.class.BroadcastManager
-local MessageQueue = LGB.internal.class.MessageQueue
 local StringField = LGB.internal.class.StringField
 local ArrayField = LGB.internal.class.ArrayField
 local TableField = LGB.internal.class.TableField
 local NumericField = LGB.internal.class.NumericField
 local PercentageField = LGB.internal.class.PercentageField
 
-local function SetupBroadcastManager()
-    local callbackManager = ZO_CallbackObject:New()
-    local dataMessageQueue = MessageQueue:New()
-    local gameApiWrapper = MockGameApiWrapper:New(callbackManager)
-    local protocolManager = ProtocolManager:New(callbackManager, dataMessageQueue)
-    local handlerManager = HandlerManager:New(protocolManager)
-    local broadcastManager = BroadcastManager:New(gameApiWrapper, protocolManager, callbackManager, dataMessageQueue)
-    return {
-        callbackManager = callbackManager,
-        dataMessageQueue = dataMessageQueue,
-        gameApiWrapper = gameApiWrapper,
-        protocolManager = protocolManager,
-        handlerManager = handlerManager,
-        broadcastManager = broadcastManager,
-    }
-end
-
 Taneth("LibGroupBroadcast", function()
     describe("BroadcastManager", function()
         it("should be able to create a new instance", function()
-            local internal = SetupBroadcastManager()
+            local internal = LGB.SetupMockInstance()
             assert.is_true(ZO_Object.IsInstanceOf(internal.broadcastManager, BroadcastManager))
         end)
 
         it.async("should be able to send and receive a long message", function(done)
-            local internal = SetupBroadcastManager()
+            local internal = LGB.SetupMockInstance()
             local manager = internal.broadcastManager
 
             local sendDataTriggered = 0
@@ -72,7 +51,7 @@ Taneth("LibGroupBroadcast", function()
         end)
 
         it.async("should be able to send and receive an array of tables", function(done)
-            local internal = SetupBroadcastManager()
+            local internal = LGB.SetupMockInstance()
             internal.gameApiWrapper:SetInCombat(false)
 
             local outgoingData = {
@@ -107,7 +86,7 @@ Taneth("LibGroupBroadcast", function()
         end)
 
         it.async("should be able to set multiple different message types in the same broadcast", function(done)
-            local internal = SetupBroadcastManager()
+            local internal = LGB.SetupMockInstance()
             local protocolManager = internal.protocolManager
 
             local received = {
@@ -171,6 +150,28 @@ Taneth("LibGroupBroadcast", function()
             FireEvent2(outgoingData2)
             assert.is_true(protocol1:Send(outgoingData1))
             assert.is_true(protocol2:Send(outgoingData2))
+        end)
+
+        it.async("should clear queued messages when not in a group", function(done)
+            local internal = LGB.SetupMockInstance()
+            local manager = internal.broadcastManager
+
+            ZO_PreHook(manager.protocolManager, "ClearQueuedMessages", function()
+                done()
+            end)
+
+            local outgoingData = { text = string.rep("a", 255) }
+            local handler = internal.handlerManager:RegisterHandler("test")
+            local protocol = handler:DeclareProtocol(0, "test")
+            assert.is_not_nil(protocol)
+            protocol:AddField(StringField:New("text"))
+            protocol:OnData(function()
+                assert.fail("Should not receive data when not in a group.")
+            end)
+            protocol:Finalize()
+
+            assert.is_true(protocol:Send(outgoingData))
+            internal.gameApiWrapper:SetGrouped(false)
         end)
     end)
 end)

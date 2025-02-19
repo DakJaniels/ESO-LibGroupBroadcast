@@ -18,7 +18,7 @@ local function bySizeDescAndTimeAddedDesc(a, b)
     return aSize > bSize
 end
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @class MessageQueue
 --- @field New fun(self: MessageQueue): MessageQueue
@@ -28,6 +28,13 @@ LGB.internal.class.MessageQueue = MessageQueue
 function MessageQueue:Initialize()
     self.nextId = 1
     self.messages = {}
+end
+
+function MessageQueue:Clear()
+    for i = #self.messages, 1, -1 do
+        self.messages[i]:SetDequeued("cleared")
+        self.messages[i] = nil
+    end
 end
 
 --- @param message DataMessageBase

@@ -13,20 +13,29 @@ local CUSTOM_EVENT_CALLBACK_PREFIX = "OnCustomEvent_"
 --[[ doc.lua begin ]] --
 
 --- @class ProtocolManager
---- @field New fun(self: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue): ProtocolManager
+--- @field New fun(self: ProtocolManager, gameApiWrapper: GameApiWrapper, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue): ProtocolManager
 local ProtocolManager = ZO_InitializingObject:Subclass()
 LGB.internal.class.ProtocolManager = ProtocolManager
 
 --- @private
 --- @param callbackManager ZO_CallbackObject
 --- @param dataMessageQueue MessageQueue
-function ProtocolManager:Initialize(callbackManager, dataMessageQueue)
+function ProtocolManager:Initialize(gameApiWrapper, callbackManager, dataMessageQueue)
     self.callbackManager = callbackManager
     self.dataMessageQueue = dataMessageQueue
     self.customEvents = {}
     self.customEventOptions = {}
     self.pendingCustomEvents = {}
     self.protocols = {}
+    self.proxy = {
+        IsGrouped = function() return gameApiWrapper:IsGrouped() end,
+        QueueDataMessage = function(_, message) self:QueueDataMessage(message) end,
+    }
+end
+
+function ProtocolManager:ClearQueuedMessages()
+    self.dataMessageQueue:Clear()
+    ZO_ClearTable(self.pendingCustomEvents)
 end
 
 function ProtocolManager:DeclareCustomEvent(handlerData, eventId, eventName, options)
@@ -130,7 +139,7 @@ function ProtocolManager:DeclareProtocol(handlerData, protocolId, protocolName)
             protocols[protocolName]:GetId()))
     end
 
-    local protocol = Protocol:New(protocolId, protocolName, self)
+    local protocol = Protocol:New(protocolId, protocolName, self.proxy)
     protocols[protocolId] = protocol
     protocols[protocolName] = protocol
     handlerData.protocols[#handlerData.protocols + 1] = { protocolId, protocolName }

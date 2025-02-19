@@ -7,8 +7,6 @@ if not Taneth then return end
 local LGB = LibGroupBroadcast
 --- @class Protocol
 local Protocol = LGB.internal.class.Protocol
-local MessageQueue = LGB.internal.class.MessageQueue
-local ProtocolManager = LGB.internal.class.ProtocolManager
 local FlagField = LGB.internal.class.FlagField
 local NumericField = LGB.internal.class.NumericField
 local VariantField = LGB.internal.class.VariantField
@@ -37,6 +35,7 @@ Taneth("LibGroupBroadcast", function()
             local sentMessage
 
             local protocol = Protocol:New(0, "test", {
+                IsGrouped = function() return true end,
                 QueueDataMessage = function(_, message) sentMessage = message end
             })
             protocol:AddField(VariantField:New({
@@ -59,7 +58,10 @@ Taneth("LibGroupBroadcast", function()
         it("should be able to receive FixedSizeDataMessages and FlexSizeDataMessages as needed", function()
             local receivedUnitTag, receivedData
 
-            local protocol = Protocol:New(0, "test", {})
+            local protocol = Protocol:New(0, "test", {
+                IsGrouped = function() return true end,
+                QueueDataMessage = function() end
+            })
             protocol:AddField(VariantField:New({
                 FlagField:New("flag"),
                 NumericField:New("number")
@@ -83,8 +85,10 @@ Taneth("LibGroupBroadcast", function()
         end)
 
         it("should automatically delete queued messages on send", function()
-            local queue = MessageQueue:New()
-            local manager = ProtocolManager:New(ZO_CallbackObject:New(), queue)
+            local internal = LGB.SetupMockInstance()
+            local queue = internal.dataMessageQueue
+            local manager = internal.protocolManager
+
             local protocol1 = manager:DeclareProtocol({ protocols = {} }, 0, "test1")
             protocol1:AddField(NumericField:New("number"))
             protocol1:OnData(function() end)
@@ -106,8 +110,10 @@ Taneth("LibGroupBroadcast", function()
         end)
 
         it("should not delete queued messages on send when the option is turned off", function()
-            local queue = MessageQueue:New()
-            local manager = ProtocolManager:New(ZO_CallbackObject:New(), queue)
+            local internal = LGB.SetupMockInstance()
+            local queue = internal.dataMessageQueue
+            local manager = internal.protocolManager
+
             local protocol1 = manager:DeclareProtocol({ protocols = {} }, 0, "test1")
             protocol1:AddField(NumericField:New("number"))
             protocol1:OnData(function() end)
@@ -127,6 +133,22 @@ Taneth("LibGroupBroadcast", function()
             assert.equals("00 00 00 02", queue:GetOldestRelevantMessage():GetData():ToHexString())
             assert.equals("00 00 00 03", queue:GetOldestRelevantMessage():GetData():ToHexString())
             assert.is_nil(queue:GetOldestRelevantMessage())
+        end)
+
+        it("should not serialize and queue data when not grouped", function()
+            local internal = LGB.SetupMockInstance()
+            internal.gameApiWrapper:SetGrouped(false)
+            local queue = internal.dataMessageQueue
+            local manager = internal.protocolManager
+
+            local protocol = manager:DeclareProtocol({ protocols = {} }, 0, "test")
+            protocol:AddField(NumericField:New("number"))
+            protocol:OnData(function() end)
+            assert.is_true(protocol:Finalize())
+
+            internal.gameApiWrapper:SetGrouped(false)
+            assert.is_false(protocol:Send({ number = 1 }))
+            assert.equals(0, queue:GetSize())
         end)
     end)
 end)

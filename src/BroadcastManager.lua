@@ -9,7 +9,7 @@ local logger = LGB.internal.logger
 
 local CURRENT_VERSION = 1
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @class BroadcastManager
 --- @field New fun(self: BroadcastManager, gameApiWrapper: GameApiWrapper, protocolManager: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue): BroadcastManager
@@ -51,7 +51,7 @@ function BroadcastManager:RequestSendData()
     end, delay)
 end
 
---[[ doc.lua end ]]--
+--[[ doc.lua end ]] --
 local function AddMessage(message, frameHandler, toRequeue)
     if not message then return false end
     if frameHandler:AddDataMessage(message) then
@@ -63,7 +63,7 @@ local function AddMessage(message, frameHandler, toRequeue)
     end
     return true
 end
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 function BroadcastManager:FillSendBuffer(inCombat)
     local frameHandler = self.frameHandler[CURRENT_VERSION]
@@ -101,8 +101,21 @@ function BroadcastManager:FillSendBuffer(inCombat)
     return frameHandler
 end
 
+function BroadcastManager:ClearMessages()
+    self.protocolManager:ClearQueuedMessages()
+    for i = 1, #self.frameHandler do
+        self.frameHandler[i]:ClearUnfinishedMessages()
+    end
+end
+
 function BroadcastManager:SendData()
     self.sendHandle = nil
+
+    if not self.gameApiWrapper:IsGrouped() then
+        logger:Info("SendData called while not in group. Clearing messages.")
+        self:ClearMessages()
+        return
+    end
 
     local inCombat = self.gameApiWrapper:IsInCombat()
     local frameHandler = self:FillSendBuffer(inCombat)

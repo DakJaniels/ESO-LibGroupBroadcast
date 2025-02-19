@@ -23,6 +23,18 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(ZO_Object.IsInstanceOf(queue, MessageQueue))
         end)
 
+        it("should be able to clear all messages", function()
+            local queue = MessageQueue:New()
+            for i = 1, 5 do
+                local message = FixedSizeDataMessage:New(i)
+                queue:EnqueueMessage(message)
+            end
+
+            assert.is_true(queue:HasRelevantMessages())
+            queue:Clear()
+            assert.is_false(queue:HasRelevantMessages())
+        end)
+
         it("should be able to delete specific messages by id", function()
             local queue = MessageQueue:New()
             local expected = FixedSizeDataMessage:New(1)

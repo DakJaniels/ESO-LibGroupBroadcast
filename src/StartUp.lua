@@ -35,7 +35,8 @@ LibGroupBroadcast = {
 
 local function SetupInstance(instance)
     instance.dataMessageQueue = internal.class.MessageQueue:New()
-    instance.protocolManager = internal.class.ProtocolManager:New(instance.callbackManager, instance.dataMessageQueue)
+    instance.protocolManager = internal.class.ProtocolManager:New(instance.gameApiWrapper, instance.callbackManager,
+        instance.dataMessageQueue)
     instance.handlerManager = internal.class.HandlerManager:New(instance.protocolManager)
     instance.broadcastManager = internal.class.BroadcastManager:New(instance.gameApiWrapper, instance.protocolManager,
         instance.callbackManager, instance.dataMessageQueue)

@@ -6,7 +6,7 @@
 local LGB = LibGroupBroadcast
 local GameApiWrapper = LGB.internal.class.GameApiWrapper
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @class MockGameApiWrapper: GameApiWrapper
 --- @field New fun(self: MockGameApiWrapper, callbackManager: ZO_CallbackObject): MockGameApiWrapper
@@ -19,6 +19,7 @@ function MockGameApiWrapper:Initialize(callbackManager)
     self.initialSendDelay = 5
     self.lastSendTime = 0
     self.inCombat = false
+    self.inGroup = true
     self.unitTag = "player"
 end
 
@@ -41,6 +42,14 @@ end
 
 function MockGameApiWrapper:SetInCombat(inCombat)
     self.inCombat = inCombat
+end
+
+function MockGameApiWrapper:IsGrouped()
+    return self.inGroup
+end
+
+function MockGameApiWrapper:SetGrouped(inGroup)
+    self.inGroup = inGroup
 end
 
 function MockGameApiWrapper:BroadcastData(buffer)
