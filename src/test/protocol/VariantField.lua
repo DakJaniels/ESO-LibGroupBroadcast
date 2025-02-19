@@ -10,6 +10,7 @@ local TableField = LGB.internal.class.TableField
 local FlagField = LGB.internal.class.FlagField
 local NumericField = LGB.internal.class.NumericField
 local BinaryBuffer = LGB.internal.class.BinaryBuffer
+local OptionalField = LGB.internal.class.OptionalField
 
 Taneth("LibGroupBroadcast", function()
     describe("VariantField", function()
@@ -63,6 +64,34 @@ Taneth("LibGroupBroadcast", function()
             data = field:Deserialize(buffer, output)
             assert.equals(69, data)
             assert.same({ number = 69 }, output)
+        end)
+
+        it("should be possible to be optional", function()
+            local field = OptionalField:New(VariantField:New({
+                NumericField:New("test"),
+                NumericField:New("test2"),
+            }))
+            assert.is_true(field:IsValid())
+
+            local buffer = BinaryBuffer:New(1)
+            assert.is_true(field:Serialize(buffer, {
+                test = 42
+            }))
+            assert.equals(1 + 1 + 32, buffer:GetNumBits())
+            assert.is_true(field:Serialize(buffer, {
+            }))
+            assert.equals(34 + 1, buffer:GetNumBits())
+
+            buffer:Rewind()
+            local output = {}
+            local data = field:Deserialize(buffer, output)
+            assert.equals(42, data)
+            assert.same({ test = 42 }, output)
+
+            output = {}
+            data = field:Deserialize(buffer, output)
+            assert.is_nil(data)
+            assert.same({ test = nil }, output)
         end)
     end)
 end)

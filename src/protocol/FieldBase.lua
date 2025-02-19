@@ -145,11 +145,31 @@ function FieldBase:GetLabel()
     return self.label
 end
 
+--- Tests whether the input table contains a value for this field that can be skipped when serializing an OptionalField.
+--- @protected
+--- @param values table The table to get the value from.
+--- @return boolean optional Whether the value is the default value.
+function FieldBase:IsValueOptional(values)
+    local value = values[self.label]
+    return value == nil or value == self.options.defaultValue
+end
+
+--- Applies the default value from the options to the output table, as needed for the OptionalField.
+--- @protected
+--- @param output? table An optional table to apply the default value to.
+--- @return any value The default value.
+function FieldBase:ApplyDefaultValue(output)
+    if output then
+        output[self.label] = self.options.defaultValue
+    end
+    return self.options.defaultValue
+end
+
 --- Gets the value from the input table based on the label of the field, or options.defaultValue if the value is nil.
 --- @protected
 --- @param values? table The table to get the value from.
 --- @return any value The value or options.defaultValue.
-function FieldBase:GetValueOrDefault(values)
+function FieldBase:GetInputOrDefaultValue(values)
     local value
     if values then
         value = values[self.label]

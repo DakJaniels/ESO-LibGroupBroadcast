@@ -128,7 +128,7 @@ end
 --- @param input table The input table to pick a value from.
 --- @return boolean success Whether the value was successfully serialized.
 function NumericField:Serialize(data, input)
-    local value = self:GetValueOrDefault(input)
+    local value = self:GetInputOrDefaultValue(input)
     if type(value) ~= "number" then
         logger:Warn("Value must be a number")
         return false

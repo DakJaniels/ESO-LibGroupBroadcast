@@ -35,7 +35,7 @@ function EnumField:Initialize(label, valueTable, options)
     FieldBase.Initialize(self, label, options)
     options = self.options --[[@as EnumFieldOptions]]
 
-    if not self:Assert(type(valueTable) == "table", "The valueTable must be a table") then return end
+    if not self:Assert(type(valueTable) == "table" and #valueTable > 0, "The valueTable must be a non-empty table") then return end
     self.indexField = self:RegisterSubField(NumericField:New("index", {
         numBits = options.numBits,
         minValue = 1,
@@ -63,7 +63,7 @@ end
 --- @param input table The input table to pick a value from.
 --- @return boolean success Whether the value was successfully serialized.
 function EnumField:Serialize(data, input)
-    local value = self:GetValueOrDefault(input)
+    local value = self:GetInputOrDefaultValue(input)
     local index = self.valueLookup[value]
     if not index then
         logger:Warn("Tried to serialize value that is not part of the valueTable")

@@ -39,7 +39,7 @@ function VariantField:Initialize(variants, options)
 
     local entries = {}
     local variantByLabel = {}
-    if self:Assert(type(variants) == "table" and #variants > 0, "'variants' must be a non-empty table") then
+    if self:Assert(type(variants) == "table" and #variants > 1, "'variants' must be a table with at least 2 entries") then
         for i = 1, #variants do
             local variant = variants[i]
             if not self:Assert(ZO_Object.IsInstanceOf(variant, FieldBase), "All variants must be instances of FieldBase") then break end
@@ -97,6 +97,25 @@ function VariantField:GetNumBitsRangeInternal()
         maxBits = maxBits + maxVariantBits
     end
     return minBits, maxBits
+end
+
+function VariantField:IsValueOptional(values)
+    for i = 1, #self.variants do
+        if not self.variants[i]:IsValueOptional(values) then
+            return false
+        end
+    end
+    return true
+end
+
+function VariantField:ApplyDefaultValue(output)
+    local default = self.options.defaultValue
+    if not default then return nil end
+    local label, value = next(default)
+    if label and output then
+        output[label] = value
+    end
+    return value
 end
 
 --- @protected

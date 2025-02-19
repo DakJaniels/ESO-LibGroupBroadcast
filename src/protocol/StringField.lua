@@ -91,7 +91,7 @@ end
 --- @param input table The input table to pick a value from.
 --- @return boolean success Whether the value was successfully serialized.
 function StringField:Serialize(data, input)
-    local value = self:GetValueOrDefault(input)
+    local value = self:GetInputOrDefaultValue(input)
     if type(value) ~= "string" then
         logger:Warn("value must be a string")
         return false

@@ -56,7 +56,7 @@ end
 --- @param input table The input table to pick a value from.
 --- @return boolean success Whether the value was successfully serialized.
 function TableField:Serialize(data, input)
-    local value = self:GetValueOrDefault(input)
+    local value = self:GetInputOrDefaultValue(input)
     if type(value) ~= "table" then
         logger:Warn("value must be a table")
         return false

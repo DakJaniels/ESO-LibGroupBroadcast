@@ -38,8 +38,7 @@ end
 --- @param input table The input table to pick a value from.
 --- @return boolean success Whether the value was successfully serialized.
 function OptionalField:Serialize(data, input)
-    local value = input[self.label]
-    if value == nil then
+    if self.valueField:IsValueOptional(input) then
         if not self.isNilField:Serialize(data, { [self.isNilField.label] = true }) then return false end
     else
         if not self.isNilField:Serialize(data, { [self.isNilField.label] = false }) then return false end
@@ -54,10 +53,7 @@ end
 --- @return any|nil value The deserialized value.
 function OptionalField:Deserialize(data, output)
     if self.isNilField:Deserialize(data) then
-        local value = self.valueField:GetValueOrDefault()
-        if output then output[self.label] = value end
-        return value
+        return self.valueField:ApplyDefaultValue(output)
     end
-
     return self.valueField:Deserialize(data, output)
 end
