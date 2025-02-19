@@ -7,7 +7,7 @@ local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
 local logger = LGB.internal.logger
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @docType options
 --- @class FlagFieldOptions: FieldOptionsBase
@@ -31,8 +31,12 @@ function FlagField:GetNumBitsRangeInternal()
     return 1, 1
 end
 
-function FlagField:Serialize(data, value)
-    value = self:GetValueOrDefault(value)
+--- Picks the value from the input table based on the label and serializes it to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function FlagField:Serialize(data, input)
+    local value = self:GetValueOrDefault(input)
     if type(value) ~= "boolean" then
         logger:Warn("Value must be a boolean")
         return false
@@ -42,6 +46,14 @@ function FlagField:Serialize(data, value)
     return true
 end
 
-function FlagField:Deserialize(data)
-    return data:ReadBit(true)
+--- Deserializes the value from the data stream, optionally storing it in a table.
+--- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return boolean value The deserialized value.
+function FlagField:Deserialize(data, output)
+    local value = data:ReadBit(true) --[[@as boolean]]
+    if output then
+        output[self.label] = value
+    end
+    return value
 end

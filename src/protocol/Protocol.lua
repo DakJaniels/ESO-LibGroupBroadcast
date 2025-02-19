@@ -10,7 +10,7 @@ local FixedSizeDataMessage = LGB.internal.class.FixedSizeDataMessage
 local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
 local logger = LGB.internal.logger
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @docType options
 --- @class ProtocolOptions
@@ -58,12 +58,15 @@ end
 function Protocol:AddField(field)
     assert(not self.finalized, "Protocol '" .. self.name .. "' has already been finalized")
     assert(ZO_Object.IsInstanceOf(field, FieldBase), "Field must be an instance of FieldBase")
-    assert(field.index == 0, "Field with label " .. field.label .. " already has an index")
-    assert(not self.fieldsByLabel[field.label], "Field with label " .. field.label .. " already exists")
 
-    field.index = #self.fields + 1
-    self.fieldsByLabel[field.label] = field
-    self.fields[field.index] = field
+    local index = #self.fields + 1
+    local labels = field:RegisterWithProtocol(index)
+    for i = 1, #labels do
+        local label = labels[i]
+        assert(not self.fieldsByLabel[label], "Field with label " .. label .. " already exists")
+        self.fieldsByLabel[label] = field
+    end
+    self.fields[index] = field
 
     return self
 end
@@ -148,8 +151,7 @@ function Protocol:Send(values, options)
 
     local data = BinaryBuffer:New(7)
     for i = 1, #self.fields do
-        local field = self.fields[i]
-        if not field:Serialize(data, values[field:GetLabel()]) then
+        if not self.fields[i]:Serialize(data, values) then
             return false
         end
     end
@@ -180,8 +182,7 @@ function Protocol:Receive(unitTag, message)
     local data = message:GetData()
     local values = {}
     for i = 1, #self.fields do
-        local field = self.fields[i]
-        values[field:GetLabel()] = field:Deserialize(data)
+        self.fields[i]:Deserialize(data, values)
     end
 
     self.onDataCallback(unitTag, values)

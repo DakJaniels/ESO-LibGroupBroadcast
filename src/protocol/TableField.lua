@@ -7,7 +7,7 @@ local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
 local logger = LGB.internal.logger
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @docType options
 --- @class TableFieldOptions: FieldOptionsBase
@@ -51,8 +51,12 @@ function TableField:GetNumBitsRangeInternal()
     return minBits, maxBits
 end
 
-function TableField:Serialize(data, value)
-    value = self:GetValueOrDefault(value)
+--- Picks the value from the input table based on the label and serializes it to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function TableField:Serialize(data, input)
+    local value = self:GetValueOrDefault(input)
     if type(value) ~= "table" then
         logger:Warn("value must be a table")
         return false
@@ -60,18 +64,22 @@ function TableField:Serialize(data, value)
 
     for i = 1, #self.fields do
         local field = self.fields[i]
-        if not field:Serialize(data, value[field.label]) then return false end
+        if not field:Serialize(data, value) then return false end
     end
     return true
 end
 
-function TableField:Deserialize(data)
+--- Deserializes the value from the data stream, optionally storing it in a table.
+--- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return table value The deserialized value.
+function TableField:Deserialize(data, output)
     local value = {}
-
     for i = 1, #self.fields do
         local field = self.fields[i]
         value[field.label] = field:Deserialize(data)
     end
 
+    if output then output[self.label] = value end
     return value
 end

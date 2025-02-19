@@ -31,14 +31,22 @@ function ReservedField:GetNumBitsRangeInternal()
     return numBits, numBits
 end
 
-function ReservedField:Serialize(data, _)
+--- Skips the number of bits specified in the options and grows the data stream if needed.
+--- @param data BinaryBuffer The data stream to modify.
+--- @param input table The (unused) input table.
+--- @return boolean success Always succeeds.
+function ReservedField:Serialize(data, input)
     local numBits = self.options.numBits
     data:GrowIfNeeded(numBits)
     data:Seek(numBits)
     return true
 end
 
-function ReservedField:Deserialize(data)
+--- Skips the number of bits specified in the options.
+--- @param data BinaryBuffer The data stream to modify.
+--- @param output? table The (unused) optional output table
+--- @return nil value The value is always nil.
+function ReservedField:Deserialize(data, output)
     local numBits = self.options.numBits
     data:Seek(numBits)
     return nil

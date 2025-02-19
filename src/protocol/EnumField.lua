@@ -58,17 +58,30 @@ function EnumField:GetNumBitsRangeInternal()
     return self.indexField:GetNumBitsRange()
 end
 
-function EnumField:Serialize(data, value)
-    value = self:GetValueOrDefault(value)
+--- Picks the value from the input table based on the label and serializes it to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function EnumField:Serialize(data, input)
+    local value = self:GetValueOrDefault(input)
     local index = self.valueLookup[value]
     if not index then
-        logger:Warn("The value is not in the valueTable")
+        logger:Warn("Tried to serialize value that is not part of the valueTable")
         return false
     end
-    return self.indexField:Serialize(data, index)
+    return self.indexField:Serialize(data, { index = index })
 end
 
-function EnumField:Deserialize(data)
+--- Deserializes the value from the data stream, optionally storing it in a table.
+--- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return any value The deserialized value.
+function EnumField:Deserialize(data, output)
     local index = self.indexField:Deserialize(data)
-    return self.valueTable[index]
+    local value = self.valueTable[index]
+    if value == nil then
+        logger:Warn("Tried to deserialize unknown index:", index)
+    end
+    if output then output[self.label] = value end
+    return value
 end

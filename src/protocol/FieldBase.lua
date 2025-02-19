@@ -9,7 +9,7 @@ local AVAILABLE_OPTIONS = {
     defaultValue = true,
 }
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @docType hidden
 --- @class FieldOptionsBase
@@ -28,8 +28,8 @@ local AVAILABLE_OPTIONS = {
 --- @field protected Initialize fun(self:FieldBase, label: string, options?: FieldOptionsBase)
 --- @field protected Subclass fun(): FieldBase
 --- @field protected GetNumBitsRangeInternal fun(self:FieldBase): integer, integer
---- @field Serialize fun(self:FieldBase, data: BinaryBuffer, value?: any)
---- @field Deserialize fun(self:FieldBase, data: BinaryBuffer): any
+--- @field Serialize fun(self:FieldBase, data: BinaryBuffer, input: table)
+--- @field Deserialize fun(self:FieldBase, data: BinaryBuffer, output?: table): any
 local FieldBase = ZO_InitializingObject:Subclass()
 LGB.internal.class.FieldBase = FieldBase
 
@@ -57,6 +57,15 @@ function FieldBase:Initialize(label, options)
     self:Assert(type(label) == "string", "Label must be a string")
     self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
     self.options = ValidateOptions(self, options)
+end
+
+--- Internal function to link a field with a protocol.
+--- @param index integer The index of the field in the protocol.
+--- @return string[] labels The labels of the field.
+function FieldBase:RegisterWithProtocol(index)
+    assert(self.index == 0, "Field has already been registered with a protocol")
+    self.index = index
+    return { self.label }
 end
 
 --- Internal function to add options for validation.
@@ -136,11 +145,15 @@ function FieldBase:GetLabel()
     return self.label
 end
 
---- Returns the passed value or options.defaultValue if the value is nil.
+--- Gets the value from the input table based on the label of the field, or options.defaultValue if the value is nil.
 --- @protected
---- @param value any The value to check.
+--- @param values? table The table to get the value from.
 --- @return any value The value or options.defaultValue.
-function FieldBase:GetValueOrDefault(value)
+function FieldBase:GetValueOrDefault(values)
+    local value
+    if values then
+        value = values[self.label]
+    end
     if value == nil then
         return self.options.defaultValue
     end
@@ -152,7 +165,7 @@ end
 --- @return integer maxBits The maximum number of bits the serialized data will take up.
 function FieldBase:GetNumBitsRange() return self:GetNumBitsRangeInternal() end
 
---[[ doc.lua end ]]--
+--[[ doc.lua end ]] --
 
 FieldBase:MUST_IMPLEMENT("GetNumBitsRangeInternal")
 FieldBase:MUST_IMPLEMENT("Serialize")

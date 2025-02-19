@@ -48,12 +48,14 @@ Taneth("LibGroupBroadcast", function()
             local value = { true, false, true }
             local field = ArrayField:New(FlagField:New("test"), { defaultValue = value })
             local buffer = BinaryBuffer:New(11)
-            assert.is_true(field:Serialize(buffer))
+            assert.is_true(field:Serialize(buffer, {}))
             assert.equals(8 + 3, buffer:GetNumBits())
 
             buffer:Rewind()
-            local actual = field:Deserialize(buffer)
+            local output = {}
+            local actual = field:Deserialize(buffer, output)
             assert.same(value, actual)
+            assert.same({ test = value }, output)
         end)
 
         it("should be able to serialize and deserialize an empty array", function()
@@ -61,12 +63,14 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(field:IsValid())
 
             local buffer = BinaryBuffer:New(8)
-            assert.is_true(field:Serialize(buffer, {}))
+            assert.is_true(field:Serialize(buffer, { test = {} }))
             assert.equals(8, buffer:GetNumBits())
 
             buffer:Rewind()
-            local actual = field:Deserialize(buffer)
-            assert.equals(0, #actual)
+            local output = {}
+            local actual = field:Deserialize(buffer, output)
+            assert.same({}, actual)
+            assert.same({ test = {} }, output)
         end)
 
         it("should be able to serialize and deserialize an array of values", function()
@@ -75,15 +79,14 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(field:IsValid())
 
             local buffer = BinaryBuffer:New(8)
-            assert.is_true(field:Serialize(buffer, input))
+            assert.is_true(field:Serialize(buffer, { test = input }))
             assert.equals(8 + #input, buffer:GetNumBits())
 
             buffer:Rewind()
-            local actual = field:Deserialize(buffer)
-            assert.equals(#input, #actual)
-            for i = 1, #input do
-                assert.equals(input[i], actual[i])
-            end
+            local output = {}
+            local actual = field:Deserialize(buffer, output)
+            assert.same(input, actual)
+            assert.same({ test = input }, output)
         end)
 
         it("should be able to serialize and deserialize an array of values with a min length", function()
@@ -92,15 +95,14 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(field:IsValid())
 
             local buffer = BinaryBuffer:New(8)
-            assert.is_true(field:Serialize(buffer, input))
+            assert.is_true(field:Serialize(buffer, { test = input }))
             assert.equals(3 + #input * 4, buffer:GetNumBits())
 
             buffer:Rewind()
-            local actual = field:Deserialize(buffer)
-            assert.equals(#input, #actual)
-            for i = 1, #input do
-                assert.equals(input[i], actual[i])
-            end
+            local output = {}
+            local actual = field:Deserialize(buffer, output)
+            assert.same(input, actual)
+            assert.same({ test = input }, output)
         end)
     end)
 end)

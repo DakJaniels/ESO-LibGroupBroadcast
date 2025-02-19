@@ -39,19 +39,19 @@ Taneth("LibGroupBroadcast", function()
             local protocol = Protocol:New(0, "test", {
                 QueueDataMessage = function(_, message) sentMessage = message end
             })
-            protocol:AddField(VariantField:New("test", {
+            protocol:AddField(VariantField:New({
                 FlagField:New("flag"),
                 NumericField:New("number")
             }))
             protocol:OnData(function(data) end)
             protocol:Finalize()
 
-            assert.is_true(protocol:Send({ test = { flag = true } }))
+            assert.is_true(protocol:Send({ flag = true }))
             assert.is_not_nil(sentMessage)
             assert.is_true(ZO_Object.IsInstanceOf(sentMessage, FixedSizeDataMessage))
 
             sentMessage = nil
-            assert.is_true(protocol:Send({ test = { number = 1 } }))
+            assert.is_true(protocol:Send({ number = 1 }))
             assert.is_not_nil(sentMessage)
             assert.is_true(ZO_Object.IsInstanceOf(sentMessage, FlexSizeDataMessage))
         end)
@@ -60,7 +60,7 @@ Taneth("LibGroupBroadcast", function()
             local receivedUnitTag, receivedData
 
             local protocol = Protocol:New(0, "test", {})
-            protocol:AddField(VariantField:New("test", {
+            protocol:AddField(VariantField:New({
                 FlagField:New("flag"),
                 NumericField:New("number")
             }))
@@ -73,13 +73,13 @@ Taneth("LibGroupBroadcast", function()
             local message = FixedSizeDataMessage:New(0, BinaryBuffer.FromHexString("40"))
             protocol:Receive("group1", message)
             assert.equals("group1", receivedUnitTag)
-            assert.is_true(receivedData.test.flag)
+            assert.is_true(receivedData.flag)
 
             receivedData = nil
             message = FlexSizeDataMessage:New(0, BinaryBuffer.FromHexString("80 00 00 00 80"))
             protocol:Receive("group2", message)
             assert.equals("group2", receivedUnitTag)
-            assert.equals(1, receivedData.test.number)
+            assert.equals(1, receivedData.number)
         end)
 
         it("should automatically delete queued messages on send", function()

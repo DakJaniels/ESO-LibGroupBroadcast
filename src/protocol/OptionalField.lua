@@ -7,7 +7,7 @@ local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
 local FlagField = LGB.internal.class.FlagField
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @docType hidden
 --- @class OptionalField: FieldBase
@@ -33,20 +33,31 @@ function OptionalField:GetNumBitsRangeInternal()
     return minFlagBits, maxFlagBits + maxValueBits
 end
 
-function OptionalField:Serialize(data, value)
+--- Picks the value from the input table based on the label and serializes it to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function OptionalField:Serialize(data, input)
+    local value = input[self.label]
     if value == nil then
-        if not self.isNilField:Serialize(data, true) then return false end
+        if not self.isNilField:Serialize(data, { [self.isNilField.label] = true }) then return false end
     else
-        if not self.isNilField:Serialize(data, false) then return false end
-        if not self.valueField:Serialize(data, value) then return false end
+        if not self.isNilField:Serialize(data, { [self.isNilField.label] = false }) then return false end
+        if not self.valueField:Serialize(data, input) then return false end
     end
     return true
 end
 
-function OptionalField:Deserialize(data)
+--- Deserializes the value from the data stream, optionally storing it in a table.
+--- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return any|nil value The deserialized value.
+function OptionalField:Deserialize(data, output)
     if self.isNilField:Deserialize(data) then
-        return self.valueField:GetValueOrDefault()
+        local value = self.valueField:GetValueOrDefault()
+        if output then output[self.label] = value end
+        return value
     end
 
-    return self.valueField:Deserialize(data)
+    return self.valueField:Deserialize(data, output)
 end

@@ -7,7 +7,7 @@ local LGB = LibGroupBroadcast
 local FieldBase = LGB.internal.class.FieldBase
 local logger = LGB.internal.logger
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @docType options
 --- @class NumericFieldOptions: FieldOptionsBase
@@ -29,7 +29,7 @@ local logger = LGB.internal.logger
 local NumericField = FieldBase:Subclass()
 LGB.internal.class.NumericField = NumericField
 
---[[ doc.lua end ]]--
+--[[ doc.lua end ]] --
 local MIN_SUPPORTED_VALUE = 0
 local MAX_SUPPORTED_VALUE = 2 ^ 32 - 1
 local AVAILABLE_OPTIONS = {
@@ -61,7 +61,7 @@ local function ApplyPrecision(value, precision)
         return Round(value * (1 / precision))
     end
 end
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- Initializes a new NumericField object.
 --- @protected
@@ -123,11 +123,12 @@ function NumericField:GetNumBitsRangeInternal()
     return self.numBits, self.numBits
 end
 
---- Writes the value to the data stream.
+--- Picks the value from the input table based on the label and serializes it to the data stream.
 --- @param data BinaryBuffer The data stream to write to.
---- @param value? number The value to serialize.
-function NumericField:Serialize(data, value)
-    value = self:GetValueOrDefault(value)
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function NumericField:Serialize(data, input)
+    local value = self:GetValueOrDefault(input)
     if type(value) ~= "number" then
         logger:Warn("Value must be a number")
         return false
@@ -155,14 +156,18 @@ function NumericField:Serialize(data, value)
     return true
 end
 
---- Reads the value from the data stream.
+--- Deserializes the value from the data stream, optionally storing it in a table.
 --- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
 --- @return number value The deserialized value.
-function NumericField:Deserialize(data)
+function NumericField:Deserialize(data, output)
     local value = data:ReadUInt(self.numBits)
     local precision = self.options.precision
     if precision then
         value = value * precision
     end
-    return value + self.minValue
+    value = value + self.minValue
+
+    if output then output[self.label] = value end
+    return value
 end

@@ -126,13 +126,12 @@ function LGB.CreateTableField(label, valueFields, options)
 end
 
 --- Creates and returns an instance of the VariantField class.
---- @param label string The label of the field.
 --- @param variants FieldBase[] A list of fields that can be used as variants.
 --- @param options? VariantFieldOptions The options table to use for the field.
 --- @return VariantField field The created VariantField instance.
 --- @see VariantField
-function LGB.CreateVariantField(label, variants, options)
-    return internal.class.VariantField:New(label, variants, options)
+function LGB.CreateVariantField(variants, options)
+    return internal.class.VariantField:New(variants, options)
 end
 
 --- Creates a subclass of the FieldBase class. Can be used to create custom field types.

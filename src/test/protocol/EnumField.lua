@@ -42,9 +42,11 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(field:IsValid())
 
             local buffer = BinaryBuffer:New(1)
-            assert.is_true(field:Serialize(buffer))
+            assert.is_true(field:Serialize(buffer, {}))
             buffer:Rewind()
-            assert.equals(values[2], field:Deserialize(buffer))
+            local output = {}
+            assert.equals(values[2], field:Deserialize(buffer, output))
+            assert.same({ test = values[2] }, output)
         end)
 
         it("should be able to serialize and deserialize a value", function()
@@ -53,9 +55,11 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(field:IsValid())
             for i = 1, #values do
                 local buffer = BinaryBuffer:New(1)
-                assert.is_true(field:Serialize(buffer, values[i]))
+                assert.is_true(field:Serialize(buffer, { test = values[i] }))
                 buffer:Rewind()
-                assert.equals(values[i], field:Deserialize(buffer))
+                local output = {}
+                assert.equals(values[i], field:Deserialize(buffer, output))
+                assert.same({ test = values[i] }, output)
                 assert.equals(2, buffer:GetNumBits())
             end
         end)

@@ -19,11 +19,13 @@ Taneth("LibGroupBroadcast", function()
             local value = "a"
             local field = StringField:New("test", { defaultValue = value })
             local buffer = BinaryBuffer:New(1)
-            assert.is_true(field:Serialize(buffer))
+            assert.is_true(field:Serialize(buffer, {}))
 
             buffer:Rewind()
-            local actual = field:Deserialize(buffer)
+            local output = {}
+            local actual = field:Deserialize(buffer, output)
             assert.equals(value, actual)
+            assert.same({ test = value }, output)
         end)
 
         it("should be able to serialize and deserialize a string", function()
@@ -32,19 +34,23 @@ Taneth("LibGroupBroadcast", function()
 
             local buffer = BinaryBuffer:New(1)
             local expectedNumBits = 8 + 0 * 8
-            assert.is_true(field:Serialize(buffer, ""))
+            assert.is_true(field:Serialize(buffer, { test = "" }))
             assert.equals(expectedNumBits, buffer:GetNumBits())
             expectedNumBits = expectedNumBits + 8 + 4 * 8
-            assert.is_true(field:Serialize(buffer, "test"))
+            assert.is_true(field:Serialize(buffer, { test = "test" }))
             assert.equals(expectedNumBits, buffer:GetNumBits())
             expectedNumBits = expectedNumBits + 8 + 5 * 8 * 3
-            assert.is_true(field:Serialize(buffer, "あいうえお"))
+            assert.is_true(field:Serialize(buffer, { test = "あいうえお" }))
             assert.equals(expectedNumBits, buffer:GetNumBits())
 
             buffer:Rewind()
-            assert.equals("", field:Deserialize(buffer))
-            assert.equals("test", field:Deserialize(buffer))
-            assert.equals("あいうえお", field:Deserialize(buffer))
+            local output = {}
+            assert.equals("", field:Deserialize(buffer, output))
+            assert.same({ test = "" }, output)
+            assert.equals("test", field:Deserialize(buffer, output))
+            assert.same({ test = "test" }, output)
+            assert.equals("あいうえお", field:Deserialize(buffer, output))
+            assert.same({ test = "あいうえお" }, output)
         end)
 
         it("should be able to serialize and deserialize an optimized string using options", function()
@@ -55,18 +61,21 @@ Taneth("LibGroupBroadcast", function()
             assert.equals(3 + 8 * 4, maxBits)
 
             local buffer = BinaryBuffer:New(1)
-            assert.is_false(field:Serialize(buffer, ""))
+            assert.is_false(field:Serialize(buffer, { test = "" }))
             local expectedNumBits = 3 + 4 * 4
-            assert.is_true(field:Serialize(buffer, "0123"))
+            assert.is_true(field:Serialize(buffer, { test = "0123" }))
             assert.equals(expectedNumBits, buffer:GetNumBits())
             expectedNumBits = expectedNumBits + 3 + 7 * 4
-            assert.is_true(field:Serialize(buffer, "3456789"))
+            assert.is_true(field:Serialize(buffer, { test = "3456789" }))
             assert.equals(expectedNumBits, buffer:GetNumBits())
-            assert.is_false(field:Serialize(buffer, " 56789a"))
+            assert.is_false(field:Serialize(buffer, { test = " 56789a" }))
 
             buffer:Rewind()
-            assert.equals("0123", field:Deserialize(buffer))
-            assert.equals("3456789", field:Deserialize(buffer))
+            local output = {}
+            assert.equals("0123", field:Deserialize(buffer, output))
+            assert.same({ test = "0123" }, output)
+            assert.equals("3456789", field:Deserialize(buffer, output))
+            assert.same({ test = "3456789" }, output)
         end)
 
         it("should be able to serialize and deserialize a string with a custom character set", function()
@@ -78,29 +87,33 @@ Taneth("LibGroupBroadcast", function()
 
             local buffer = BinaryBuffer:New(1)
             local expectedNumBits = 8 + 0 * 3
-            assert.is_true(field:Serialize(buffer, ""))
+            assert.is_true(field:Serialize(buffer, { test = "" }))
             assert.equals(expectedNumBits, buffer:GetNumBits())
             expectedNumBits = expectedNumBits + 8 + 2 * 3
-            assert.is_true(field:Serialize(buffer, "あい"))
+            assert.is_true(field:Serialize(buffer, { test = "あい" }))
             assert.equals(expectedNumBits, buffer:GetNumBits())
             expectedNumBits = expectedNumBits + 8 + 2 * 3
-            assert.is_true(field:Serialize(buffer, "えお"))
+            assert.is_true(field:Serialize(buffer, { test = "えお" }))
             assert.equals(expectedNumBits, buffer:GetNumBits())
-            assert.is_false(field:Serialize(buffer, "test"))
+            assert.is_false(field:Serialize(buffer, { test = "test" }))
 
             buffer:Rewind()
-            assert.equals("", field:Deserialize(buffer))
-            assert.equals("あい", field:Deserialize(buffer))
-            assert.equals("えお", field:Deserialize(buffer))
+            local output = {}
+            assert.equals("", field:Deserialize(buffer, output))
+            assert.same({ test = "" }, output)
+            assert.equals("あい", field:Deserialize(buffer, output))
+            assert.same({ test = "あい" }, output)
+            assert.equals("えお", field:Deserialize(buffer, output))
+            assert.same({ test = "えお" }, output)
         end)
 
-        it("should error when trying to write more characters than the maximum length", function()
+        it("should fail to serialize when trying to write more characters than the maximum length", function()
             local field = StringField:New("test", { maxLength = 4 })
             assert.is_true(field:IsValid())
 
             local buffer = BinaryBuffer:New(1)
-            assert.is_true(field:Serialize(buffer, "test"))
-            assert.is_false(field:Serialize(buffer, "tests"))
+            assert.is_true(field:Serialize(buffer, { test = "test" }))
+            assert.is_false(field:Serialize(buffer, { test = "tests" }))
         end)
     end)
 end)

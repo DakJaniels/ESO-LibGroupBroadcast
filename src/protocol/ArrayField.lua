@@ -8,7 +8,7 @@ local FieldBase = LGB.internal.class.FieldBase
 local NumericField = LGB.internal.class.NumericField
 local logger = LGB.internal.logger
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @docType options
 --- @class ArrayFieldOptions : FieldOptionsBase
@@ -26,13 +26,13 @@ local logger = LGB.internal.logger
 local ArrayField = FieldBase:Subclass()
 LGB.internal.class.ArrayField = ArrayField
 
---[[ doc.lua end ]]--
+--[[ doc.lua end ]] --
 local DEFAULT_MAX_LENGTH = 2 ^ 8 - 1
 local AVAILABLE_OPTIONS = {
     minLength = true,
     maxLength = true,
 }
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @protected
 function ArrayField:Initialize(valueField, options)
@@ -68,11 +68,12 @@ function ArrayField:GetNumBitsRangeInternal()
     return minBits, maxBits
 end
 
---- Writes the value to the data stream.
+--- Picks the value from the input table based on the label and serializes it to the data stream.
 --- @param data BinaryBuffer The data stream to write to.
---- @param value? table The value to serialize.
-function ArrayField:Serialize(data, value)
-    value = self:GetValueOrDefault(value)
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function ArrayField:Serialize(data, input)
+    local value = self:GetValueOrDefault(input)
     if type(value) ~= "table" then
         logger:Warn("value must be a table")
         return false
@@ -84,26 +85,29 @@ function ArrayField:Serialize(data, value)
     end
 
     local count = #value
-    if not self.countField:Serialize(data, count) then
+    if not self.countField:Serialize(data, { count = count }) then
         return false
     end
 
     for i = 1, count do
-        if not self.valueField:Serialize(data, value[i]) then
+        if not self.valueField:Serialize(data, { [self.label] = value[i] }) then
             return false
         end
     end
     return true
 end
 
---- Reads the value from the data stream.
+--- Deserializes the value from the data stream, optionally storing it in a table.
 --- @param data BinaryBuffer The data stream to read from.
---- @return table value The deserialized value.
-function ArrayField:Deserialize(data)
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return any[] value The deserialized value.
+function ArrayField:Deserialize(data, output)
     local count = self.countField:Deserialize(data)
     local value = {}
     for i = 1, count do
         value[i] = self.valueField:Deserialize(data)
     end
+
+    if output then output[self.label] = value end
     return value
 end

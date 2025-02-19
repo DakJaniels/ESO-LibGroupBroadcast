@@ -16,7 +16,7 @@ local AVAILABLE_OPTIONS = {
     maxLength = true,
 }
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @docType options
 --- @class StringFieldOptions: FieldOptionsBase
@@ -32,7 +32,7 @@ local AVAILABLE_OPTIONS = {
 local StringField = FieldBase:Subclass()
 LGB.internal.class.StringField = StringField
 
---[[ doc.lua end ]]--
+--[[ doc.lua end ]] --
 -- as of v10.3.2 utf8.char still crashes the game, so we use this code ported from the utf8lib in Lua5.3 instead
 local UTF8BUFFSZ = 8
 local buff = {}
@@ -54,7 +54,7 @@ local function utf8esc(x)
     end
     return string.char(unpack(buff, UTF8BUFFSZ - n, UTF8BUFFSZ - 1))
 end
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @protected
 function StringField:Initialize(label, options)
@@ -86,11 +86,12 @@ function StringField:GetNumBitsRangeInternal()
     return self.arrayField:GetNumBitsRange()
 end
 
---- Writes the value to the data stream.
+--- Picks the value from the input table based on the label and serializes it to the data stream.
 --- @param data BinaryBuffer The data stream to write to.
---- @param value? string The value to serialize. If not provided, the default value specified in the options will be used.
-function StringField:Serialize(data, value)
-    value = self:GetValueOrDefault(value)
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function StringField:Serialize(data, input)
+    local value = self:GetValueOrDefault(input)
     if type(value) ~= "string" then
         logger:Warn("value must be a string")
         return false
@@ -102,22 +103,28 @@ function StringField:Serialize(data, value)
     else
         parts = { string.byte(value, 1, #value) }
     end
-    return self.arrayField:Serialize(data, parts)
+    return self.arrayField:Serialize(data, { [self.label] = parts })
 end
 
---- Reads the value from the data stream.
+--- Deserializes the value from the data stream, optionally storing it in a table.
 --- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
 --- @return string value The deserialized value.
-function StringField:Deserialize(data)
+function StringField:Deserialize(data, output)
+    local value = ""
     local parts = self.arrayField:Deserialize(data)
-    if #parts == 0 then return "" end
-    if self.options.characters then
-        for i = 1, #parts do
-            parts[i] = utf8esc(parts[i])
+    if #parts > 0 then
+        if self.options.characters then
+            for i = 1, #parts do
+                parts[i] = utf8esc(parts[i])
+            end
+            value = table.concat(parts)
+            -- TODO simplify, once the utf8.char function no longer crashes the game
+            -- value = utf8.char(unpack(parts))
+        else
+            value = string.char(unpack(parts))
         end
-        return table.concat(parts)
-        -- TODO simplify, once the utf8.char function no longer crashes the game
-        -- return utf8.char(unpack(parts))
     end
-    return string.char(unpack(parts))
+    if output then output[self.label] = value end
+    return value
 end

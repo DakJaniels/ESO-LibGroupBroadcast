@@ -8,12 +8,13 @@ local FieldBase = LGB.internal.class.FieldBase
 local EnumField = LGB.internal.class.EnumField
 local logger = LGB.internal.logger
 
+local TOO_MANY_VARIANTS_SET = {}
 local AVAILABLE_OPTIONS = {
     maxNumVariants = true,
     numBits = true,
 }
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @docType options
 --- @class VariantFieldOptions: FieldOptionsBase
@@ -26,19 +27,19 @@ local AVAILABLE_OPTIONS = {
 --- @field protected labelField EnumField
 --- @field protected variants FieldBase[]
 --- @field protected variantByLabel table<string, FieldBase>
---- @field New fun(self: VariantField, label: string, variants: FieldBase[], options?: VariantFieldOptions): VariantField
+--- @field New fun(self: VariantField, variants: FieldBase[], options?: VariantFieldOptions): VariantField
 local VariantField = FieldBase:Subclass()
 LGB.internal.class.VariantField = VariantField
 
 --- @protected
-function VariantField:Initialize(label, variants, options)
+function VariantField:Initialize(variants, options)
     self:RegisterAvailableOptions(AVAILABLE_OPTIONS)
-    FieldBase.Initialize(self, label, options)
+    FieldBase.Initialize(self, "variants", options)
     options = self.options --[[@as VariantFieldOptions]]
 
     local entries = {}
     local variantByLabel = {}
-    if self:Assert(type(variants) == "table", "'variants' must be a table") then
+    if self:Assert(type(variants) == "table" and #variants > 0, "'variants' must be a non-empty table") then
         for i = 1, #variants do
             local variant = variants[i]
             if not self:Assert(ZO_Object.IsInstanceOf(variant, FieldBase), "All variants must be instances of FieldBase") then break end
@@ -47,6 +48,7 @@ function VariantField:Initialize(label, variants, options)
             variantByLabel[variant.label] = variant
             entries[#entries + 1] = variant.label
         end
+        self.label = string.format("%s(%s)", self.label, table.concat(entries, ", "))
     end
 
     self.labelField = self:RegisterSubField(EnumField:New("label", entries, {
@@ -61,6 +63,31 @@ function VariantField:Initialize(label, variants, options)
     end
 end
 
+function VariantField:RegisterWithProtocol(index)
+    local labels = FieldBase.RegisterWithProtocol(self, index)
+    for i = 1, #self.variants do
+        labels[i] = self.variants[i].label
+    end
+    return labels
+end
+
+function VariantField:PickValue(values)
+    local value
+    local count = 0
+    for i = 1, #self.variants do
+        local variant = self.variants[i]
+        if values[variant.label] ~= nil then
+            value = { [variant.label] = values[variant.label] }
+            count = count + 1
+        end
+    end
+    if count > 1 then
+        logger:Warn("Expected exactly one variant to be set for field %s, but found %d", self.label, count)
+        return TOO_MANY_VARIANTS_SET
+    end
+    return value
+end
+
 --- @protected
 function VariantField:GetNumBitsRangeInternal()
     local minBits, maxBits = self.labelField:GetNumBitsRange()
@@ -72,37 +99,69 @@ function VariantField:GetNumBitsRangeInternal()
     return minBits, maxBits
 end
 
---- Writes the value to the data stream.
+--- @protected
+function VariantField:GetValueOrDefault(values)
+    local count = 0
+    local value
+    for i = 1, #self.variants do
+        local variant = self.variants[i]
+        if values[variant.label] ~= nil then
+            value = { [variant.label] = values[variant.label] }
+            count = count + 1
+        end
+    end
+
+    if count > 1 then
+        return TOO_MANY_VARIANTS_SET
+    end
+
+    if value == nil then
+        return self.options.defaultValue
+    end
+    return value
+end
+
+--- Picks the value from the input table based on the label and serializes it to the data stream.
 --- @param data BinaryBuffer The data stream to write to.
---- @param value? table The value to serialize.
-function VariantField:Serialize(data, value)
-    value = self:GetValueOrDefault(value)
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function VariantField:Serialize(data, input)
+    local value = self:GetValueOrDefault(input)
+    if value == TOO_MANY_VARIANTS_SET then
+        logger:Warn("Expected at most one variant to be set for field %s, but found %d", self.label, count)
+        return false
+    end
+
     if type(value) ~= "table" then
         logger:Warn("Value must be a table")
         return false
     end
 
-    local label, payload = next(value)
+    local label = next(value)
     local variant = self.variantByLabel[label]
     if not variant then
-        logger:Warn("Unknown variant: " .. tostring(label))
+        logger:Warn("Tried to serialize unknown variant:", label)
         return false
     end
 
-    if not self.labelField:Serialize(data, label) then return false end
-    if not variant:Serialize(data, payload) then return false end
+    if not self.labelField:Serialize(data, { label = label }) then return false end
+    if not variant:Serialize(data, value) then return false end
     return true
 end
 
---- Reads the value from the data stream.
+--- Deserializes the value from the data stream, optionally storing it in a table.
 --- @param data BinaryBuffer The data stream to read from.
---- @return table value The deserialized value.
-function VariantField:Deserialize(data)
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return any value The deserialized value.
+function VariantField:Deserialize(data, output)
     local label = self.labelField:Deserialize(data)
     local variant = self.variantByLabel[label]
-    local payload = {}
-    if variant then
-        payload[label] = variant:Deserialize(data)
+    if not variant then
+        logger:Warn("Tried to deserialize unknown variant:", label)
+        return nil
     end
-    return payload
+
+    local value = variant:Deserialize(data, output)
+    if output then output[variant.label] = value end
+    return value
 end

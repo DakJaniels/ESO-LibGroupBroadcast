@@ -14,26 +14,29 @@ local BinaryBuffer = LGB.internal.class.BinaryBuffer
 Taneth("LibGroupBroadcast", function()
     describe("VariantField", function()
         it("should be able to create a new instance", function()
-            local field = VariantField:New("test", {})
+            local field = VariantField:New({})
             assert.is_true(ZO_Object.IsInstanceOf(field, VariantField))
         end)
 
         it("should support a defaultValue", function()
-            local value = { flagA = true }
-            local field = VariantField:New("test", {
+            local field = VariantField:New({
                 FlagField:New("flagA"),
                 FlagField:New("flagB"),
-            }, { defaultValue = value })
+            }, { defaultValue = { flagA = true } })
+            assert.equals("variants(flagA, flagB)", field:GetLabel())
+
             local buffer = BinaryBuffer:New(1)
-            assert.is_true(field:Serialize(buffer))
+            assert.is_true(field:Serialize(buffer, {}))
 
             buffer:Rewind()
-            local actual = field:Deserialize(buffer)
-            assert.same(value, actual)
+            local output = {}
+            local actual = field:Deserialize(buffer, output)
+            assert.is_true(actual)
+            assert.same({ flagA = true }, output)
         end)
 
         it("should be able to serialize and deserialize nested fields", function()
-            local field = VariantField:New("test", {
+            local field = VariantField:New({
                 TableField:New("table", {
                     FlagField:New("flag"),
                     NumericField:New("number"),
@@ -51,16 +54,15 @@ Taneth("LibGroupBroadcast", function()
             }))
 
             buffer:Rewind()
-            local data = field:Deserialize(buffer)
-            assert.equals("table", type(data))
-            assert.is_nil(data.number)
-            assert.is_not_nil(data.table)
-            assert.equals(true, data.table.flag)
-            assert.equals(42, data.table.number)
+            local output = {}
+            local data = field:Deserialize(buffer, output)
+            assert.same({ flag = true, number = 42 }, data)
+            assert.same({ table = { flag = true, number = 42 } }, output)
 
-            data = field:Deserialize(buffer)
-            assert.equals(69, data.number)
-            assert.is_nil(data.table)
+            output = {}
+            data = field:Deserialize(buffer, output)
+            assert.equals(69, data)
+            assert.same({ number = 69 }, output)
         end)
     end)
 end)
