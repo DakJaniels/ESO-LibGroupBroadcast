@@ -64,6 +64,12 @@ function HandlerManager:RegisterHandler(addonName, handlerName)
         SetDescription = function(_, description)
             handlerData.description = description
         end,
+        SetUserSettings = function(_, settings)
+            handlerData.settings = settings
+        end,
+        IsCustomEventEnabled = function(_, eventIdOrName)
+            return self.protocolManager:IsCustomEventEnabled(eventIdOrName)
+        end,
     })
     self.data[#self.data + 1] = handlerData
     if handlerName then
@@ -83,4 +89,8 @@ end
 
 function HandlerManager:GetHandlerData(handler)
     return self.dataByHandler[handler]
+end
+
+function HandlerManager:GetHandlers()
+    return self.data
 end

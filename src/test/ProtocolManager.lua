@@ -13,10 +13,10 @@ local OptionalField = LGB.internal.class.OptionalField
 local FixedSizeDataMessage = LGB.internal.class.FixedSizeDataMessage
 local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
 
-local function CreateProtocolManager()
-    local internal = LGB.SetupMockInstance()
+local function CreateProtocolManager(createWithoutSaveData)
+    local internal = LGB.SetupMockInstance(createWithoutSaveData)
     local handler = internal.handlerManager:RegisterHandler("test")
-    return internal.protocolManager, handler
+    return internal.protocolManager, handler, internal
 end
 
 Taneth("LibGroupBroadcast", function()
@@ -195,6 +195,63 @@ Taneth("LibGroupBroadcast", function()
 
             assert.is_true(manager:HasRelevantMessages())
             manager:ClearQueuedMessages()
+            assert.is_false(manager:HasRelevantMessages())
+        end)
+
+        it("should ignore events or messages when save data was not loaded yet", function()
+            local manager, handler, internal = CreateProtocolManager(true)
+
+            local protocol = handler:DeclareProtocol(0, "test")
+            protocol:AddField(NumericField:New("numberA", { numBits = 6 }))
+            protocol:AddField(OptionalField:New(NumericField:New("numberB")))
+            protocol:OnData(function() end)
+            assert.is_true(protocol:Finalize())
+
+            local fireEvent = handler:DeclareCustomEvent(0, "test")
+            assert.is_not_nil(fireEvent)
+
+            fireEvent()
+            assert.is_true(manager.pendingCustomEvents[0])
+            assert.is_false(manager:HasRelevantMessages())
+
+            assert.is_true(protocol:Send({ numberA = 1 }))
+            assert.is_true(internal.dataMessageQueue:HasRelevantMessages())
+            assert.is_false(manager:HasRelevantMessages())
+        end)
+
+        it("should allow to disable specific protocols and custom events", function()
+            local manager, handler, internal = CreateProtocolManager()
+            assert.is_not_nil(internal.saveData)
+
+            local protocol = handler:DeclareProtocol(0, "test")
+            protocol:AddField(NumericField:New("numberA", { numBits = 6 }))
+            protocol:AddField(OptionalField:New(NumericField:New("numberB")))
+            protocol:OnData(function() end)
+            assert.is_true(protocol:Finalize())
+
+            local fireEvent = handler:DeclareCustomEvent(0, "test")
+            assert.is_not_nil(fireEvent)
+
+            assert.is_true(manager:IsCustomEventEnabled(0))
+            fireEvent()
+            assert.is_true(manager.pendingCustomEvents[0])
+            assert.is_true(manager:HasRelevantMessages())
+
+            manager:SetCustomEventEnabled(0, false)
+            assert.is_false(manager:IsCustomEventEnabled(0))
+
+            manager:RemoveDisabledMessages()
+            assert.is_false(manager:HasRelevantMessages())
+
+            assert.is_true(manager:IsProtocolEnabled(0))
+            assert.is_true(protocol:Send({ numberA = 1 }))
+            assert.is_true(internal.dataMessageQueue:HasRelevantMessages())
+            assert.is_true(manager:HasRelevantMessages())
+
+            manager:SetProtocolEnabled(0, false)
+            assert.is_false(manager:IsProtocolEnabled(0))
+
+            manager:RemoveDisabledMessages()
             assert.is_false(manager:HasRelevantMessages())
         end)
     end)

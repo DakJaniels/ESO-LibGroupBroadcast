@@ -51,16 +51,24 @@ end
 --- @field handlerManager HandlerManager
 --- @field protocolManager ProtocolManager
 --- @field broadcastManager BroadcastManager
+--- @field saveData SaveData
 --[[ doc.lua end ]] --
 
 --- @return LibGroupBroadcastMockInstance
-function internal.SetupMockInstance()
+function internal.SetupMockInstance(createWithoutSaveData)
     local callbackManager = ZO_CallbackObject:New()
     local instance = setmetatable({
         callbackManager = callbackManager,
         gameApiWrapper = internal.class.MockGameApiWrapper:New(callbackManager),
-    }, { __index = LibGroupBroadcast })
+    }, { __index = LibGroupBroadcast }) --[[@as LibGroupBroadcastMockInstance]]
     SetupInstance(instance)
+
+    if not createWithoutSaveData then
+        local saveData = internal.class.SaveData:New({})
+        instance.protocolManager:SetSaveData(saveData)
+        instance.broadcastManager:SetSaveData(saveData)
+        instance.saveData = saveData
+    end
 
     function instance:RegisterHandler(...)
         return instance.handlerManager:RegisterHandler(...)
@@ -85,7 +93,16 @@ end
 function LibGroupBroadcast:Initialize()
     internal.gameApiWrapper = internal.class.GameApiWrapper:New(authKey, "LibGroupBroadcast", internal.callbackManager)
     SetupInstance(internal)
+    internal:InitializeSettingsPanel()
     internal.authKey = nil
     self.internal = nil
     self.Initialize = nil
 end
+
+EVENT_MANAGER:RegisterForEvent("LibGroupBroadcast", EVENT_ADD_ON_LOADED, function(_, name)
+    if name ~= "LibGroupBroadcast" then return end
+    EVENT_MANAGER:UnregisterForEvent("LibGroupBroadcast", EVENT_ADD_ON_LOADED)
+    local saveData = internal.class.SaveData:New()
+    internal.protocolManager:SetSaveData(saveData)
+    internal.broadcastManager:SetSaveData(saveData)
+end)

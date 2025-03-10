@@ -58,11 +58,11 @@ function MessageQueue:DequeueMessage(i)
 end
 
 --- @param protocolId number
-function MessageQueue:DeleteMessagesByProtocolId(protocolId)
+function MessageQueue:DeleteMessagesByProtocolId(protocolId, reason)
     for i = #self.messages, 1, -1 do
         if self.messages[i]:GetId() == protocolId then
             local message = table.remove(self.messages, i)
-            message:SetDequeued("deleted")
+            message:SetDequeued(reason or "deleted")
         end
     end
 end

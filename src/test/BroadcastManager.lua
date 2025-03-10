@@ -173,5 +173,75 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(protocol:Send(outgoingData))
             internal.gameApiWrapper:SetGrouped(false)
         end)
+
+        it.async("should not send disabled custom events", function(done)
+            local internal = LGB.SetupMockInstance()
+            local broadcastManager = internal.broadcastManager
+            local protocolManager = internal.protocolManager
+
+            local sendDataTriggered = 0
+            local received = 0
+            local handler = internal.handlerManager:RegisterHandler("test")
+            local FireEvent = handler:DeclareCustomEvent(0, "testEvent")
+            protocolManager:RegisterForCustomEvent("testEvent", function()
+                received = received + 1
+                if received == 2 then
+                    done()
+                end
+            end)
+
+            ZO_PostHook(broadcastManager, "SendData", function()
+                sendDataTriggered = sendDataTriggered + 1
+                if sendDataTriggered == 1 then
+                    protocolManager:SetCustomEventEnabled(0, false)
+                    assert.is_false(protocolManager:IsCustomEventEnabled(0))
+                    FireEvent()
+                elseif sendDataTriggered == 2 then
+                    protocolManager:SetCustomEventEnabled(0, true)
+                    assert.is_true(protocolManager:IsCustomEventEnabled(0))
+                    FireEvent()
+                end
+            end)
+
+            FireEvent()
+        end)
+
+        it.async("should not send disabled protocols", function(done)
+            local internal = LGB.SetupMockInstance()
+            local broadcastManager = internal.broadcastManager
+            local protocolManager = internal.protocolManager
+
+            local sendDataTriggered = 0
+            local received = {}
+            local handler = internal.handlerManager:RegisterHandler("test")
+            local protocol = handler:DeclareProtocol(0, "test")
+            assert.is_not_nil(protocol)
+            protocol:AddField(NumericField:New("test"))
+            protocol:OnData(function(_, data)
+                received[#received + 1] = data.test
+                if data.test == 3 then
+                    assert.equals(3, sendDataTriggered)
+                    assert.same({ 1, 3 }, received)
+                    done()
+                end
+            end)
+            protocol:Finalize()
+
+            ZO_PostHook(broadcastManager, "SendData", function()
+                sendDataTriggered = sendDataTriggered + 1
+                if sendDataTriggered == 1 then
+                    protocolManager:SetProtocolEnabled(0, false)
+                    assert.is_false(protocol:IsEnabled())
+                    assert.is_true(protocol:Send({ test = 2 }))
+                elseif sendDataTriggered == 2 then
+                    protocolManager:SetProtocolEnabled(0, true)
+                    assert.is_true(protocol:IsEnabled())
+                    assert.is_true(protocol:Send({ test = 3 }))
+                end
+            end)
+
+            assert.is_true(protocol:IsEnabled())
+            assert.is_true(protocol:Send({ test = 1 }))
+        end)
     end)
 end)

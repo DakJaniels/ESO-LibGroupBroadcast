@@ -8,7 +8,7 @@
 ## APIVersion: @API_VERSION@
 ## AddOnVersion: @BUILD_NUMBER@
 ## IsLibrary: true
-## DependsOn: LibAddonMenu-2.0 LibDebugLogger
+## DependsOn: LibAddonMenu-2.0>=38 LibDebugLogger
 ## OptionalDependsOn: Taneth
 ## SavedVariables: LibGroupBroadcast_Data
 
@@ -21,6 +21,10 @@
 test/mocks.lua
 
 StartUp.lua
+settings/UserSettings.lua
+settings/LAM2UserSettings.lua
+settings/SaveData.lua
+settings/SettingsPanel.lua
 BinaryBuffer.lua
 ChecksumHelper.lua
 messages/MessageBase.lua

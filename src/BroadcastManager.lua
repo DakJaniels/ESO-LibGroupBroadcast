@@ -34,9 +34,14 @@ function BroadcastManager:Initialize(gameApiWrapper, protocolManager, callbackMa
     end)
 end
 
-function BroadcastManager:RequestSendData()
-    if self.sendHandle then return end
+function BroadcastManager:SetSaveData(saveData)
+    self.saveData = saveData
+end
 
+function BroadcastManager:RequestSendData()
+    if self.sendHandle or not self.saveData then return end
+
+    self.protocolManager:RemoveDisabledMessages()
     local inCombat = self.gameApiWrapper:IsInCombat()
     local hasCombatRelevantMessages = self.protocolManager:HasRelevantMessages(true)
     if inCombat and not hasCombatRelevantMessages then return end
@@ -117,6 +122,7 @@ function BroadcastManager:SendData()
         return
     end
 
+    self.protocolManager:RemoveDisabledMessages()
     local inCombat = self.gameApiWrapper:IsInCombat()
     local frameHandler = self:FillSendBuffer(inCombat)
     if frameHandler:HasData() then

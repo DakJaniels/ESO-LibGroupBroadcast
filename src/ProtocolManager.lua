@@ -10,6 +10,11 @@ local Protocol = LGB.internal.class.Protocol
 
 local CUSTOM_EVENT_CALLBACK_PREFIX = "OnCustomEvent_"
 
+--- @class ProtocolManagerProxy
+--- @field IsGrouped fun(self: ProtocolManagerProxy): boolean
+--- @field QueueDataMessage fun(self: ProtocolManagerProxy, message: FixedSizeDataMessage | FlexSizeDataMessage)
+--- @field IsProtocolEnabled fun(self: ProtocolManagerProxy, protocolId: number): boolean
+
 --[[ doc.lua begin ]] --
 
 --- @class ProtocolManager
@@ -18,6 +23,7 @@ local ProtocolManager = ZO_InitializingObject:Subclass()
 LGB.internal.class.ProtocolManager = ProtocolManager
 
 --- @private
+--- @param gameApiWrapper GameApiWrapper
 --- @param callbackManager ZO_CallbackObject
 --- @param dataMessageQueue MessageQueue
 function ProtocolManager:Initialize(gameApiWrapper, callbackManager, dataMessageQueue)
@@ -29,8 +35,46 @@ function ProtocolManager:Initialize(gameApiWrapper, callbackManager, dataMessage
     self.protocols = {}
     self.proxy = {
         IsGrouped = function() return gameApiWrapper:IsGrouped() end,
+        IsProtocolEnabled = function(_, protocolId) return self:IsProtocolEnabled(protocolId) end,
         QueueDataMessage = function(_, message) self:QueueDataMessage(message) end,
     }
+end
+
+function ProtocolManager:SetSaveData(saveData)
+    self.saveData = saveData
+    self.customEventDisabled = saveData:GetCustomEventDisabled()
+    self.protocolDisabled = saveData:GetProtocolDisabled()
+end
+
+function ProtocolManager:IsCustomEventEnabled(eventIdOrName)
+    if not self.customEventDisabled then return false end
+    if type(eventIdOrName) == "string" then
+        eventIdOrName = self.customEvents[eventIdOrName]
+    end
+    return self.customEventDisabled[eventIdOrName] ~= true
+end
+
+function ProtocolManager:SetCustomEventEnabled(eventId, enabled)
+    if not self.customEventDisabled then return end
+    if enabled then
+        self.customEventDisabled[eventId] = nil
+    else
+        self.customEventDisabled[eventId] = true
+    end
+end
+
+function ProtocolManager:IsProtocolEnabled(protocolId)
+    if not self.protocolDisabled then return false end
+    return self.protocolDisabled[protocolId] ~= true
+end
+
+function ProtocolManager:SetProtocolEnabled(protocolId, enabled)
+    if not self.protocolDisabled then return end
+    if enabled then
+        self.protocolDisabled[protocolId] = nil
+    else
+        self.protocolDisabled[protocolId] = true
+    end
 end
 
 function ProtocolManager:ClearQueuedMessages()
@@ -52,13 +96,31 @@ function ProtocolManager:DeclareCustomEvent(handlerData, eventId, eventName, opt
 
     customEvents[eventId] = eventName
     customEvents[eventName] = eventId
-    self.customEventOptions[eventId] = options or {}
+    options = options or {}
+    self.customEventOptions[eventId] = options
     assert(type(self.customEventOptions[eventId]) == "table", "options must be a table.")
 
-    handlerData.customEvents[#handlerData.customEvents + 1] = { eventId, eventName }
+    handlerData.customEvents[#handlerData.customEvents + 1] = { eventId, eventName, options.displayName, options
+        .userSettings }
     return function()
         self.pendingCustomEvents[eventId] = true
         self.callbackManager:FireCallbacks("RequestSendData")
+    end
+end
+
+function ProtocolManager:RemoveDisabledMessages()
+    if not self.saveData then return end
+
+    for eventId, disabled in pairs(self.customEventDisabled) do
+        if disabled then
+            self.pendingCustomEvents[eventId] = nil
+        end
+    end
+
+    for protocolId, disabled in pairs(self.protocolDisabled) do
+        if disabled then
+            self.dataMessageQueue:DeleteMessagesByProtocolId(protocolId, "disabled")
+        end
     end
 end
 
@@ -142,7 +204,7 @@ function ProtocolManager:DeclareProtocol(handlerData, protocolId, protocolName)
     local protocol = Protocol:New(protocolId, protocolName, self.proxy)
     protocols[protocolId] = protocol
     protocols[protocolName] = protocol
-    handlerData.protocols[#handlerData.protocols + 1] = { protocolId, protocolName }
+    handlerData.protocols[#handlerData.protocols + 1] = protocol
     return protocol
 end
 
@@ -152,6 +214,8 @@ function ProtocolManager:QueueDataMessage(message)
 end
 
 function ProtocolManager:HasRelevantMessages(inCombat)
+    if not self.saveData then return false end
+
     for eventId in pairs(self.pendingCustomEvents) do
         if not inCombat then
             return true

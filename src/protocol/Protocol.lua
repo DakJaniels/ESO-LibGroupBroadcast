@@ -17,10 +17,6 @@ local logger = LGB.internal.logger
 --- @field isRelevantInCombat boolean? Whether the protocol is relevant in combat.
 --- @field replaceQueuedMessages boolean? Whether to replace already queued messages with the same protocol ID when Send is called.
 
---- @class ProtocolManagerProxy
---- @field IsGrouped fun(self: ProtocolManagerProxy): boolean
---- @field QueueDataMessage fun(self: ProtocolManagerProxy, message: FixedSizeDataMessage | FlexSizeDataMessage)
-
 --- @class Protocol
 --- @field protected id number
 --- @field protected name string
@@ -54,6 +50,44 @@ end
 --- @return string name The protocol's name.
 function Protocol:GetName()
     return self.name
+end
+
+--- Sets a display name for the protocol for use in various places.
+--- @param displayName string The display name to set.
+function Protocol:SetDisplayName(displayName)
+    self.displayName = displayName
+end
+
+--- Returns the displayName of the protocol if it was set.
+--- @return string | nil displayName The displayName or nil.
+function Protocol:GetDisplayName()
+    return self.displayName
+end
+
+--- Sets a description for the protocol for use in various places.
+--- @param description string The description to set.
+function Protocol:SetDescription(description)
+    self.description = description
+end
+
+--- Returns the description of the protocol if it was set.
+--- @return string | nil description The description or nil.
+function Protocol:GetDescription()
+    return self.displayName
+end
+
+--- Sets custom settings for the protocol.
+--- @param settings UserSettings An instance of UserSettings.
+function Protocol:SetUserSettings(settings)
+    assert(ZO_Object.IsInstanceOf(settings, LGB.internal.class.UserSettings),
+        "Settings must be an instance of UserSettings")
+    self.settings = settings
+end
+
+--- Returns the custom settings of the protocol if they have been set.
+--- @return UserSettings | nil settings An instance of UserSettings or nil.
+function Protocol:GetUserSettings()
+    return self.settings
 end
 
 --- Adds a field to the protocol. Fields are serialized in the order they are added.
@@ -90,6 +124,18 @@ end
 --- @return boolean isFinalized Whether the protocol has been finalized.
 function Protocol:IsFinalized()
     return self.finalized
+end
+
+--- Returns whether the user has enabled data transmission for this protocol in the settings.
+--- 
+--- You can check this before calling Send, otherwise the library will show the blocked attempts in its own UI.
+--- If you want to inform the user that your addon won't work due to the protocol being disabled,
+--- you should only do so in a non-intrusive way (e.g. when they actively interact with features that require it).
+--- 
+--- **It is highly discouraged to show unsolicited notifications (e.g. chat messages or popups) about this.**
+--- @return boolean IsEnabled Whether the protocol is allowed to send data.
+function Protocol:IsEnabled()
+    return self.manager:IsProtocolEnabled(self.id)
 end
 
 --- Finalizes the protocol. This must be called before the protocol can be used to send or receive data.

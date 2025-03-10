@@ -147,9 +147,11 @@ end
 --- The returned table has the same API as the global LibGroupBroadcast table, but is not connected to the global state.
 --- It also contains references to some internal objects that are not normally exposed and uses an instance of MockGameApiWrapper.
 ---
+--- @param createWithoutSaveData? boolean If true, the mock instance will behave like before EVENT_ADD_ON_LOADED was fired and not have any save data.
+--- @return LibGroupBroadcastMockInstance instance A new instance of the library for use in tests.
 --- @see LibGroupBroadcastInternal.SetupMockInstance
-function LGB.SetupMockInstance()
-    return internal.SetupMockInstance()
+function LGB.SetupMockInstance(createWithoutSaveData)
+    return internal.SetupMockInstance(createWithoutSaveData)
 end
 
 --[[ doc.lua end ]] --

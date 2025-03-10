@@ -4,6 +4,13 @@
 
 if not Taneth or not Taneth.IsExternal() then return end
 
+if not LibAddonMenu2 then
+    LibAddonMenu2 = {
+        RegisterAddonPanel = function() end,
+        RegisterOptionControls = function() end,
+    }
+end
+
 function IsUnitPlayer(unitTag)
     return unitTag == "player"
 end
@@ -18,6 +25,10 @@ end
 
 function GetRawUnitName(unitTag)
     return unitTag
+end
+
+function GetDisplayName()
+    return "@player"
 end
 
 if RegisterForGroupAddOnDataBroadcastAuthKey then return end
