@@ -125,12 +125,7 @@ function isAllowedFile(entryFile: string) {
     if (!entryFile) {
         return false;
     }
-    const prefixPosition = entryFile.indexOf(PREFIX);
-    if (prefixPosition === -1) {
-        return false;
-    }
-    const file = entryFile.slice(prefixPosition + PREFIX.length);
-    return !!ALLOWED_FILES[file];
+    return !!ALLOWED_FILES[entryFile];
 }
 
 function getOrder(file: string) {
