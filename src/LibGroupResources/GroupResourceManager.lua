@@ -105,7 +105,7 @@ function GroupResourceManager:OnPlayerResourceChanged(powerValue, powerMax)
         end
     end
 
-    if shouldSend then
+    if shouldSend and IsUnitGrouped("player") and self.protocol:IsEnabled() then
         self.protocol:Send(data)
     end
 end
