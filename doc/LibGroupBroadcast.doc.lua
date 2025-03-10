@@ -99,12 +99,11 @@ function LibGroupBroadcast.CreateStringField(label, options) end
 function LibGroupBroadcast.CreateTableField(label, valueFields, options) end
 
 --- Creates and returns an instance of the VariantField class.
---- @param label string The label of the field.
 --- @param variants FieldBase[] A list of fields that can be used as variants.
 --- @param options? VariantFieldOptions The options table to use for the field.
 --- @return VariantField field The created VariantField instance.
 --- @see VariantField
-function LibGroupBroadcast.CreateVariantField(label, variants, options) end
+function LibGroupBroadcast.CreateVariantField(variants, options) end
 
 --- Creates a subclass of the FieldBase class. Can be used to create custom field types.
 --- @generic T : FieldBase
@@ -117,9 +116,17 @@ function LibGroupBroadcast.CreateFieldBaseSubclass() end
 --- The returned table has the same API as the global LibGroupBroadcast table, but is not connected to the global state.
 --- It also contains references to some internal objects that are not normally exposed and uses an instance of MockGameApiWrapper.
 ---
+--- @param createWithoutSaveData? boolean If true, the mock instance will behave like before EVENT_ADD_ON_LOADED was fired and not have any save data.
+--- @return LibGroupBroadcastMockInstance instance A new instance of the library for use in tests.
 --- @see LibGroupBroadcastInternal.SetupMockInstance
-function LibGroupBroadcast.SetupMockInstance() end
+function LibGroupBroadcast.SetupMockInstance(createWithoutSaveData) end
 
+
+--- @class CustomEventOptions
+--- @field displayName string? A display name for use in various places.
+--- @field description string? A description for use in various places.
+--- @field userSettings UserSettings? Additional settings
+--- @field isRelevantInCombat boolean? Whether the customEvent is relevant in combat.
 
 --- @class Handler
 --- @field private proxy table
@@ -142,15 +149,32 @@ function Handler:SetDisplayName(displayName) end
 --- @param description string The description to set.
 function Handler:SetDescription(description) end
 
+--- Sets custom settings for the handler.
+--- @param settings UserSettings An instance of UserSettings.
+function Handler:SetUserSettings(settings) end
+
 --- Declares a custom event that can be used to send messages without data to other group members with minimal overhead or throws an error if the declaration failed.
---- 
+---
 --- Each event id and event name has to be globally unique between all addons. In order to coordinate which values are already in use,
 --- every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
 --- https://wiki.esoui.com/LibGroupBroadcast_IDs
 --- @param eventId number The custom event ID to use.
 --- @param eventName string The custom event name to use.
+--- @param options? CustomEventOptions Configuration for the custom event
 --- @return function FireEvent A function that can be called to request sending this custom event to other group members.
-function Handler:DeclareCustomEvent(eventId, eventName) end
+--- @see CustomEventOptions
+function Handler:DeclareCustomEvent(eventId, eventName, options) end
+
+--- Returns whether the user has enabled data transmission for this custom event in the settings.
+---
+--- You can check this before calling FireEvent, otherwise the library will show the blocked attempts in its own UI.
+--- If you want to inform the user that your addon won't work due to the custom event being disabled,
+--- you should only do so in a non-intrusive way (e.g. when they actively interact with features that require it).
+---
+--- **It is highly discouraged to show unsolicited notifications (e.g. chat messages or popups) about this.**
+--- @param eventIdOrName number | string The id or name of the custom event to check.
+--- @return boolean IsEnabled Whether the custom event is allowed to be sent.
+function Handler:IsCustomEventEnabled(eventIdOrName) end
 
 --- Declares a new protocol with the given ID and name and returns the Protocol object instance or throws an error if the declaration failed.
 ---
@@ -179,8 +203,8 @@ function Handler:DeclareProtocol(protocolId, protocolName) end
 --- @field protected Initialize fun(self:FieldBase, label: string, options?: FieldOptionsBase)
 --- @field protected Subclass fun(): FieldBase
 --- @field protected GetNumBitsRangeInternal fun(self:FieldBase): integer, integer
---- @field Serialize fun(self:FieldBase, data: BinaryBuffer, value?: any)
---- @field Deserialize fun(self:FieldBase, data: BinaryBuffer): any
+--- @field Serialize fun(self:FieldBase, data: BinaryBuffer, input: table)
+--- @field Deserialize fun(self:FieldBase, data: BinaryBuffer, output?: table): any
 local FieldBase = ZO_InitializingObject:Subclass()
 
 
@@ -189,6 +213,11 @@ local FieldBase = ZO_InitializingObject:Subclass()
 --- @param label string The label of the field.
 --- @param options? FieldOptionsBase Optional configuration for the field.
 function FieldBase:Initialize(label, options) end
+
+--- Internal function to link a field with a protocol.
+--- @param index integer The index of the field in the protocol.
+--- @return string[] labels The labels of the field.
+function FieldBase:RegisterWithProtocol(index) end
 
 --- Internal function to add options for validation.
 --- @protected
@@ -227,11 +256,23 @@ function FieldBase:IsValid() end
 --- @return string label The label of the field.
 function FieldBase:GetLabel() end
 
---- Returns the passed value or options.defaultValue if the value is nil.
+--- Tests whether the input table contains a value for this field that can be skipped when serializing an OptionalField.
 --- @protected
---- @param value any The value to check.
+--- @param values table The table to get the value from.
+--- @return boolean optional Whether the value is the default value.
+function FieldBase:IsValueOptional(values) end
+
+--- Applies the default value from the options to the output table, as needed for the OptionalField.
+--- @protected
+--- @param output? table An optional table to apply the default value to.
+--- @return any value The default value.
+function FieldBase:ApplyDefaultValue(output) end
+
+--- Gets the value from the input table based on the label of the field, or options.defaultValue if the value is nil.
+--- @protected
+--- @param values? table The table to get the value from.
 --- @return any value The value or options.defaultValue.
-function FieldBase:GetValueOrDefault(value) end
+function FieldBase:GetInputOrDefaultValue(values) end
 
 --- Returns the minimum and maximum number of bits the serialized data will take up.
 --- @return integer minBits The minimum number of bits the serialized data will take up.
@@ -245,13 +286,13 @@ function FieldBase:GetNumBitsRange() return self:GetNumBitsRangeInternal() end
 --- @class Protocol
 --- @field protected id number
 --- @field protected name string
---- @field protected manager ProtocolManager
+--- @field protected manager ProtocolManagerProxy
 --- @field protected fields FieldBase[]
 --- @field protected fieldsByLabel table<string, FieldBase>
 --- @field protected finalized boolean
 --- @field protected onDataCallback fun(unitTag: string, data: table)
 --- @field protected options ProtocolOptions
---- @field protected New fun(self: Protocol, id: number, name: string, manager: ProtocolManager): Protocol
+--- @field protected New fun(self: Protocol, id: number, name: string, manager: ProtocolManagerProxy): Protocol
 local Protocol = ZO_InitializingObject:Subclass()
 
 --- @protected
@@ -264,6 +305,30 @@ function Protocol:GetId() end
 --- Getter for the protocol's name.
 --- @return string name The protocol's name.
 function Protocol:GetName() end
+
+--- Sets a display name for the protocol for use in various places.
+--- @param displayName string The display name to set.
+function Protocol:SetDisplayName(displayName) end
+
+--- Returns the displayName of the protocol if it was set.
+--- @return string | nil displayName The displayName or nil.
+function Protocol:GetDisplayName() end
+
+--- Sets a description for the protocol for use in various places.
+--- @param description string The description to set.
+function Protocol:SetDescription(description) end
+
+--- Returns the description of the protocol if it was set.
+--- @return string | nil description The description or nil.
+function Protocol:GetDescription() end
+
+--- Sets custom settings for the protocol.
+--- @param settings UserSettings An instance of UserSettings.
+function Protocol:SetUserSettings(settings) end
+
+--- Returns the custom settings of the protocol if they have been set.
+--- @return UserSettings | nil settings An instance of UserSettings or nil.
+function Protocol:GetUserSettings() end
 
 --- Adds a field to the protocol. Fields are serialized in the order they are added.
 --- @param field FieldBase The field to add.
@@ -278,6 +343,16 @@ function Protocol:OnData(callback) end
 --- Returns whether the protocol has been finalized.
 --- @return boolean isFinalized Whether the protocol has been finalized.
 function Protocol:IsFinalized() end
+
+--- Returns whether the user has enabled data transmission for this protocol in the settings.
+--- 
+--- You can check this before calling Send, otherwise the library will show the blocked attempts in its own UI.
+--- If you want to inform the user that your addon won't work due to the protocol being disabled,
+--- you should only do so in a non-intrusive way (e.g. when they actively interact with features that require it).
+--- 
+--- **It is highly discouraged to show unsolicited notifications (e.g. chat messages or popups) about this.**
+--- @return boolean IsEnabled Whether the protocol is allowed to send data.
+function Protocol:IsEnabled() end
 
 --- Finalizes the protocol. This must be called before the protocol can be used to send or receive data.
 --- @param options? ProtocolOptions Optional options for the protocol.
@@ -322,15 +397,17 @@ function NumericField:Initialize(label, options) end
 --- @protected
 function NumericField:GetNumBitsRangeInternal() end
 
---- Writes the value to the data stream.
+--- Picks the value from the input table based on the label and serializes it to the data stream.
 --- @param data BinaryBuffer The data stream to write to.
---- @param value? number The value to serialize.
-function NumericField:Serialize(data, value) end
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function NumericField:Serialize(data, input) end
 
---- Reads the value from the data stream.
+--- Deserializes the value from the data stream, optionally storing it in a table.
 --- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
 --- @return number value The deserialized value.
-function NumericField:Deserialize(data) end
+function NumericField:Deserialize(data, output) end
 
 
 --- @class FlagFieldOptions: FieldOptionsBase
@@ -346,9 +423,17 @@ function FlagField:Initialize(label, options) end
 --- @protected
 function FlagField:GetNumBitsRangeInternal() end
 
-function FlagField:Serialize(data, value) end
+--- Picks the value from the input table based on the label and serializes it to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function FlagField:Serialize(data, input) end
 
-function FlagField:Deserialize(data) end
+--- Deserializes the value from the data stream, optionally storing it in a table.
+--- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return boolean value The deserialized value.
+function FlagField:Deserialize(data, output) end
 
 
 --- @class OptionalField: FieldBase
@@ -363,9 +448,17 @@ function OptionalField:Initialize(valueField) end
 --- @protected
 function OptionalField:GetNumBitsRangeInternal() end
 
-function OptionalField:Serialize(data, value) end
+--- Picks the value from the input table based on the label and serializes it to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function OptionalField:Serialize(data, input) end
 
-function OptionalField:Deserialize(data) end
+--- Deserializes the value from the data stream, optionally storing it in a table.
+--- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return any|nil value The deserialized value.
+function OptionalField:Deserialize(data, output) end
 
 
 --- @class ArrayFieldOptions : FieldOptionsBase
@@ -388,15 +481,17 @@ function ArrayField:Initialize(valueField, options) end
 --- @protected
 function ArrayField:GetNumBitsRangeInternal() end
 
---- Writes the value to the data stream.
+--- Picks the value from the input table based on the label and serializes it to the data stream.
 --- @param data BinaryBuffer The data stream to write to.
---- @param value? table The value to serialize.
-function ArrayField:Serialize(data, value) end
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function ArrayField:Serialize(data, input) end
 
---- Reads the value from the data stream.
+--- Deserializes the value from the data stream, optionally storing it in a table.
 --- @param data BinaryBuffer The data stream to read from.
---- @return table value The deserialized value.
-function ArrayField:Deserialize(data) end
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return any[] value The deserialized value.
+function ArrayField:Deserialize(data, output) end
 
 
 --- @class TableFieldOptions: FieldOptionsBase
@@ -413,9 +508,17 @@ function TableField:Initialize(label, valueFields, options) end
 --- @protected
 function TableField:GetNumBitsRangeInternal() end
 
-function TableField:Serialize(data, value) end
+--- Picks the value from the input table based on the label and serializes it to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function TableField:Serialize(data, input) end
 
-function TableField:Deserialize(data) end
+--- Deserializes the value from the data stream, optionally storing it in a table.
+--- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return table value The deserialized value.
+function TableField:Deserialize(data, output) end
 
 
 --- @class VariantFieldOptions: FieldOptionsBase
@@ -427,24 +530,37 @@ function TableField:Deserialize(data) end
 --- @field protected labelField EnumField
 --- @field protected variants FieldBase[]
 --- @field protected variantByLabel table<string, FieldBase>
---- @field New fun(self: VariantField, label: string, variants: FieldBase[], options?: VariantFieldOptions): VariantField
+--- @field New fun(self: VariantField, variants: FieldBase[], options?: VariantFieldOptions): VariantField
 local VariantField = FieldBase:Subclass()
 
 --- @protected
-function VariantField:Initialize(label, variants, options) end
+function VariantField:Initialize(variants, options) end
+
+function VariantField:RegisterWithProtocol(index) end
+
+function VariantField:PickValue(values) end
 
 --- @protected
 function VariantField:GetNumBitsRangeInternal() end
 
---- Writes the value to the data stream.
---- @param data BinaryBuffer The data stream to write to.
---- @param value? table The value to serialize.
-function VariantField:Serialize(data, value) end
+function VariantField:IsValueOptional(values) end
 
---- Reads the value from the data stream.
+function VariantField:ApplyDefaultValue(output) end
+
+--- @protected
+function VariantField:GetValueOrDefault(values) end
+
+--- Picks the value from the input table based on the label and serializes it to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function VariantField:Serialize(data, input) end
+
+--- Deserializes the value from the data stream, optionally storing it in a table.
 --- @param data BinaryBuffer The data stream to read from.
---- @return table value The deserialized value.
-function VariantField:Deserialize(data) end
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return any value The deserialized value.
+function VariantField:Deserialize(data, output) end
 
 
 --- @class EnumFieldOptions: FieldOptionsBase
@@ -464,9 +580,17 @@ function EnumField:Initialize(label, valueTable, options) end
 --- @protected
 function EnumField:GetNumBitsRangeInternal() end
 
-function EnumField:Serialize(data, value) end
+--- Picks the value from the input table based on the label and serializes it to the data stream.
+--- @param data BinaryBuffer The data stream to write to.
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function EnumField:Serialize(data, input) end
 
-function EnumField:Deserialize(data) end
+--- Deserializes the value from the data stream, optionally storing it in a table.
+--- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
+--- @return any value The deserialized value.
+function EnumField:Deserialize(data, output) end
 
 
 --- @class PercentageFieldOptions: FieldOptionsBase
@@ -499,15 +623,17 @@ function StringField:Initialize(label, options) end
 --- @protected
 function StringField:GetNumBitsRangeInternal() end
 
---- Writes the value to the data stream.
+--- Picks the value from the input table based on the label and serializes it to the data stream.
 --- @param data BinaryBuffer The data stream to write to.
---- @param value? string The value to serialize. If not provided, the default value specified in the options will be used.
-function StringField:Serialize(data, value) end
+--- @param input table The input table to pick a value from.
+--- @return boolean success Whether the value was successfully serialized.
+function StringField:Serialize(data, input) end
 
---- Reads the value from the data stream.
+--- Deserializes the value from the data stream, optionally storing it in a table.
 --- @param data BinaryBuffer The data stream to read from.
+--- @param output? table An optional table to store the deserialized value in with the label of the field as key.
 --- @return string value The deserialized value.
-function StringField:Deserialize(data) end
+function StringField:Deserialize(data, output) end
 
 
 --- @class ReservedField: FieldBase
@@ -520,9 +646,17 @@ function ReservedField:Initialize(label, numBits) end
 --- @protected
 function ReservedField:GetNumBitsRangeInternal() end
 
-function ReservedField:Serialize(data, _) end
+--- Skips the number of bits specified in the options and grows the data stream if needed.
+--- @param data BinaryBuffer The data stream to modify.
+--- @param input table The (unused) input table.
+--- @return boolean success Always succeeds.
+function ReservedField:Serialize(data, input) end
 
-function ReservedField:Deserialize(data) end
+--- Skips the number of bits specified in the options.
+--- @param data BinaryBuffer The data stream to modify.
+--- @param output? table The (unused) optional output table
+--- @return nil value The value is always nil.
+function ReservedField:Deserialize(data, output) end
 
 
 --- @class BinaryBuffer
@@ -632,6 +766,8 @@ function GameApiWrapper:GetInitialSendDelay() end
 
 function GameApiWrapper:IsInCombat() end
 
+function GameApiWrapper:IsGrouped() end
+
 function GameApiWrapper:BroadcastData(buffer) end
 
 function GameApiWrapper:OnDataReceived(unitTag, ...) end
@@ -653,6 +789,10 @@ function MockGameApiWrapper:IsInCombat() end
 
 function MockGameApiWrapper:SetInCombat(inCombat) end
 
+function MockGameApiWrapper:IsGrouped() end
+
+function MockGameApiWrapper:SetGrouped(inGroup) end
+
 function MockGameApiWrapper:BroadcastData(buffer) end
 
 function MockGameApiWrapper:SetUnitTag(unitTag) end
@@ -664,13 +804,15 @@ local MessageQueue = ZO_InitializingObject:Subclass()
 
 function MessageQueue:Initialize() end
 
+function MessageQueue:Clear() end
+
 --- @param message DataMessageBase
 function MessageQueue:EnqueueMessage(message) end
 
 function MessageQueue:DequeueMessage(i) end
 
 --- @param protocolId number
-function MessageQueue:DeleteMessagesByProtocolId(protocolId) end
+function MessageQueue:DeleteMessagesByProtocolId(protocolId, reason) end
 
 function MessageQueue:GetSize() end
 
@@ -695,17 +837,33 @@ function HandlerManager:GetHandlerApi(handlerName) end
 
 function HandlerManager:GetHandlerData(handler) end
 
+function HandlerManager:GetHandlers() end
 
 --- @class ProtocolManager
---- @field New fun(self: ProtocolManager, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue): ProtocolManager
+--- @field New fun(self: ProtocolManager, gameApiWrapper: GameApiWrapper, callbackManager: ZO_CallbackObject, dataMessageQueue: MessageQueue): ProtocolManager
 local ProtocolManager = ZO_InitializingObject:Subclass()
 
 --- @private
+--- @param gameApiWrapper GameApiWrapper
 --- @param callbackManager ZO_CallbackObject
 --- @param dataMessageQueue MessageQueue
-function ProtocolManager:Initialize(callbackManager, dataMessageQueue) end
+function ProtocolManager:Initialize(gameApiWrapper, callbackManager, dataMessageQueue) end
+
+function ProtocolManager:SetSaveData(saveData) end
+
+function ProtocolManager:IsCustomEventEnabled(eventIdOrName) end
+
+function ProtocolManager:SetCustomEventEnabled(eventId, enabled) end
+
+function ProtocolManager:IsProtocolEnabled(protocolId) end
+
+function ProtocolManager:SetProtocolEnabled(protocolId, enabled) end
+
+function ProtocolManager:ClearQueuedMessages() end
 
 function ProtocolManager:DeclareCustomEvent(handlerData, eventId, eventName, options) end
+
+function ProtocolManager:RemoveDisabledMessages() end
 
 function ProtocolManager:GetCustomEventCallbackName(eventName) end
 
@@ -732,12 +890,14 @@ local BroadcastManager = ZO_InitializingObject:Subclass()
 
 function BroadcastManager:Initialize(gameApiWrapper, protocolManager, callbackManager, dataMessageQueue) end
 
+function BroadcastManager:SetSaveData(saveData) end
+
 function BroadcastManager:RequestSendData() end
 
 
 function BroadcastManager:FillSendBuffer(inCombat) end
 
-function BroadcastManager:IsInCombat() end
+function BroadcastManager:ClearMessages() end
 
 function BroadcastManager:SendData() end
 
@@ -749,4 +909,5 @@ function BroadcastManager:OnDataReceived(unitTag, data) end
 --- @field dataMessageQueue MessageQueue
 --- @field handlerManager HandlerManager
 --- @field protocolManager ProtocolManager
---- @field broadcastManager BroadcastManager
+--- @field broadcastManager BroadcastManager
+--- @field saveData SaveData

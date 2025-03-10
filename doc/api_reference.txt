@@ -113,7 +113,7 @@ function LibGroupBroadcast.CreateEnumField(label: string, valueTable: any[], opt
 
 See:
 [LIST]
-    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/EnumField.lua#L23']EnumField[/URL]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/EnumField.lua#L24']EnumField[/URL]
 [/LIST]
 
 Options:
@@ -302,19 +302,18 @@ Options:
     [SIZE="2"]CreateVariantField[/SIZE]
     [INDENT]
         [highlight="Lua"]
-function LibGroupBroadcast.CreateVariantField(label: string, variants: FieldBase[], options?: VariantFieldOptions)
+function LibGroupBroadcast.CreateVariantField(variants: FieldBase[], options?: VariantFieldOptions)
   -> field: VariantField
         [/highlight]
  Creates and returns an instance of the VariantField class.
 
-[I]@param[/I] [B]label[/B] — The label of the field.
 [I]@param[/I] [B]variants[/B] — A list of fields that can be used as variants.
 [I]@param[/I] [B]options[/B] — The options table to use for the field.
 [I]@return[/I] [B]field[/B] — The created VariantField instance.
 
 See:
 [LIST]
-    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/VariantField.lua#L25']VariantField[/URL]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/protocol/VariantField.lua#L26']VariantField[/URL]
 [/LIST]
 
 Options:
@@ -348,19 +347,63 @@ See:
     [SIZE="2"]SetupMockInstance[/SIZE]
     [INDENT]
         [highlight="Lua"]
-function LibGroupBroadcast.SetupMockInstance()
-  -> LibGroupBroadcastMockInstance
+function LibGroupBroadcast.SetupMockInstance(createWithoutSaveData?: boolean)
+  -> instance: LibGroupBroadcastMockInstance
         [/highlight]
  Creates a new separate instance of the LibGroupBroadcast library for use in Taneth tests.
 
  The returned table has the same API as the global LibGroupBroadcast table, but is not connected to the global state.
  It also contains references to some internal objects that are not normally exposed and uses an instance of MockGameApiWrapper.
 
+[I]@param[/I] [B]createWithoutSaveData[/B] — If true, the mock instance will behave like before EVENT_ADD_ON_LOADED was fired and not have any save data.
+[I]@return[/I] [B]instance[/B] — A new instance of the library for use in tests.
 
 See:
 [LIST]
-    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/StartUp.lua#L56']LibGroupBroadcastInternal.SetupMockInstance[/URL]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/StartUp.lua#L58']LibGroupBroadcastInternal.SetupMockInstance[/URL]
 [/LIST]
+    [/INDENT]
+[/INDENT]
+
+
+[SIZE="3"]CustomEventOptions[/SIZE]
+[INDENT]
+    [SIZE="2"]displayName[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+string?
+        [/highlight]
+A display name for use in various places.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]description[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+string?
+        [/highlight]
+A description for use in various places.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]userSettings[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+UserSettings?
+        [/highlight]
+Additional settings
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]isRelevantInCombat[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+boolean?
+        [/highlight]
+Whether the customEvent is relevant in combat.
     [/INDENT]
 [/INDENT]
 
@@ -408,21 +451,59 @@ See:
 [/INDENT]
 
 [INDENT]
+    [SIZE="2"]SetUserSettings[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Handler:SetUserSettings(settings: UserSettings)
+        [/highlight]
+ Sets custom settings for the handler.
+
+[I]@param[/I] [B]settings[/B] — An instance of UserSettings.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
     [SIZE="2"]DeclareCustomEvent[/SIZE]
     [INDENT]
         [highlight="Lua"]
-(method) Handler:DeclareCustomEvent(eventId: number, eventName: string)
+(method) Handler:DeclareCustomEvent(eventId: number, eventName: string, options?: CustomEventOptions)
   -> FireEvent: function
         [/highlight]
  Declares a custom event that can be used to send messages without data to other group members with minimal overhead or throws an error if the declaration failed.
- 
+
  Each event id and event name has to be globally unique between all addons. In order to coordinate which values are already in use,
  every author is required to reserve them on the following page on the esoui wiki, before releasing their addon to the public:
  https://wiki.esoui.com/LibGroupBroadcast_IDs
 
 [I]@param[/I] [B]eventId[/B] — The custom event ID to use.
 [I]@param[/I] [B]eventName[/B] — The custom event name to use.
+[I]@param[/I] [B]options[/B] — Configuration for the custom event
 [I]@return[/I] [B]FireEvent[/B] — A function that can be called to request sending this custom event to other group members.
+
+See:
+[LIST]
+    [*][URL='https://github.com/sirinsidiator/ESO-LibGroupBroadcast/blob/main/src/Handler.lua#L10']CustomEventOptions[/URL]
+[/LIST]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]IsCustomEventEnabled[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Handler:IsCustomEventEnabled(eventIdOrName: string|number)
+  -> IsEnabled: boolean
+        [/highlight]
+ Returns whether the user has enabled data transmission for this custom event in the settings.
+
+ You can check this before calling FireEvent, otherwise the library will show the blocked attempts in its own UI.
+ If you want to inform the user that your addon won't work due to the custom event being disabled,
+ you should only do so in a non-intrusive way (e.g. when they actively interact with features that require it).
+
+ **It is highly discouraged to show unsolicited notifications (e.g. chat messages or popups) about this.**
+
+[I]@param[/I] [B]eventIdOrName[/B] — The id or name of the custom event to check.
+[I]@return[/I] [B]IsEnabled[/B] — Whether the custom event is allowed to be sent.
     [/INDENT]
 [/INDENT]
 
@@ -479,6 +560,108 @@ See:
 [/INDENT]
 
 [INDENT]
+    [SIZE="2"]SetDisplayName[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:SetDisplayName(displayName: string)
+        [/highlight]
+ Sets a display name for the protocol for use in various places.
+
+[I]@param[/I] [B]displayName[/B] — The display name to set.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]displayName[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+string
+        [/highlight]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]GetDisplayName[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:GetDisplayName()
+  -> displayName: string|nil
+        [/highlight]
+ Returns the displayName of the protocol if it was set.
+
+[I]@return[/I] [B]displayName[/B] — The displayName or nil.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]SetDescription[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:SetDescription(description: string)
+        [/highlight]
+ Sets a description for the protocol for use in various places.
+
+[I]@param[/I] [B]description[/B] — The description to set.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]description[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+string
+        [/highlight]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]GetDescription[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:GetDescription()
+  -> description: string|nil
+        [/highlight]
+ Returns the description of the protocol if it was set.
+
+[I]@return[/I] [B]description[/B] — The description or nil.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]SetUserSettings[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:SetUserSettings(settings: UserSettings)
+        [/highlight]
+ Sets custom settings for the protocol.
+
+[I]@param[/I] [B]settings[/B] — An instance of UserSettings.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]settings[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+UserSettings
+        [/highlight]
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]GetUserSettings[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:GetUserSettings()
+  -> settings: UserSettings|nil
+        [/highlight]
+ Returns the custom settings of the protocol if they have been set.
+
+[I]@return[/I] [B]settings[/B] — An instance of UserSettings or nil.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
     [SIZE="2"]AddField[/SIZE]
     [INDENT]
         [highlight="Lua"]
@@ -516,6 +699,25 @@ See:
  Returns whether the protocol has been finalized.
 
 [I]@return[/I] [B]isFinalized[/B] — Whether the protocol has been finalized.
+    [/INDENT]
+[/INDENT]
+
+[INDENT]
+    [SIZE="2"]IsEnabled[/SIZE]
+    [INDENT]
+        [highlight="Lua"]
+(method) Protocol:IsEnabled()
+  -> IsEnabled: boolean
+        [/highlight]
+ Returns whether the user has enabled data transmission for this protocol in the settings.
+ 
+ You can check this before calling Send, otherwise the library will show the blocked attempts in its own UI.
+ If you want to inform the user that your addon won't work due to the protocol being disabled,
+ you should only do so in a non-intrusive way (e.g. when they actively interact with features that require it).
+ 
+ **It is highly discouraged to show unsolicited notifications (e.g. chat messages or popups) about this.**
+
+[I]@return[/I] [B]IsEnabled[/B] — Whether the protocol is allowed to send data.
     [/INDENT]
 [/INDENT]
 
