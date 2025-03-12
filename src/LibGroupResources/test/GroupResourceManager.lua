@@ -13,6 +13,7 @@ local function SetupResource(id, name, powerType)
     local callbackManager = ZO_CallbackObject:New()
     local handler = api:RegisterHandler("test")
     local resource = GroupResourceManager:New(handler, id, name, powerType, callbackManager, api)
+    resource.CanSend = function() return true end
     return resource, api
 end
 
