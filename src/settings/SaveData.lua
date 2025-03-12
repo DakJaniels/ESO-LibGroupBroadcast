@@ -11,6 +11,7 @@ local DEFAULT_SAVE_DATA = {
     version = 1,
     customEventDisabled = {},
     protocolDisabled = {},
+    sendDataWhileInvisible = false
 }
 
 local SAVED_VAR_NAME = "LibGroupBroadcast_Data"
@@ -40,4 +41,12 @@ end
 
 function SaveData:GetProtocolDisabled()
     return self.data.protocolDisabled
+end
+
+function SaveData:SetSendDataWhileInvisible(shouldSend)
+    self.data.sendDataWhileInvisible = shouldSend
+end
+
+function SaveData:GetSendDataWhileInvisible()
+    return self.data.sendDataWhileInvisible
 end

@@ -106,8 +106,8 @@ function BroadcastManager:FillSendBuffer(inCombat)
     return frameHandler
 end
 
-function BroadcastManager:ClearMessages()
-    self.protocolManager:ClearQueuedMessages()
+function BroadcastManager:ClearMessages(reason)
+    self.protocolManager:ClearQueuedMessages(reason)
     for i = 1, #self.frameHandler do
         self.frameHandler[i]:ClearUnfinishedMessages()
     end
@@ -116,9 +116,14 @@ end
 function BroadcastManager:SendData()
     self.sendHandle = nil
 
-    if not self.gameApiWrapper:IsGrouped() then
-        logger:Info("SendData called while not in group. Clearing messages.")
-        self:ClearMessages()
+    if not self.saveData then
+        self:ClearMessages("not ready")
+        return
+    elseif not self.gameApiWrapper:IsGrouped() then
+        self:ClearMessages("not grouped")
+        return
+    elseif not self.saveData:GetSendDataWhileInvisible() and self.gameApiWrapper:IsInOfflineMode() then
+        self:ClearMessages("offline")
         return
     end
 

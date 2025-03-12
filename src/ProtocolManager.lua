@@ -77,8 +77,8 @@ function ProtocolManager:SetProtocolEnabled(protocolId, enabled)
     end
 end
 
-function ProtocolManager:ClearQueuedMessages()
-    self.dataMessageQueue:Clear()
+function ProtocolManager:ClearQueuedMessages(reason)
+    self.dataMessageQueue:Clear(reason)
     ZO_ClearTable(self.pendingCustomEvents)
 end
 

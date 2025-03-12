@@ -30,9 +30,9 @@ function MessageQueue:Initialize()
     self.messages = {}
 end
 
-function MessageQueue:Clear()
+function MessageQueue:Clear(reason)
     for i = #self.messages, 1, -1 do
-        self.messages[i]:SetDequeued("cleared")
+        self.messages[i]:SetDequeued(reason or "cleared")
         self.messages[i] = nil
     end
 end

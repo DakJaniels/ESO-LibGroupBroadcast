@@ -1,8 +1,15 @@
 --- @class LibGroupBroadcastInternal
 local internal = LibGroupBroadcast.internal
 
-local function CreateOptionsData(handlerManager, protocolManager)
+local function CreateOptionsData(saveData, handlerManager, protocolManager)
     local optionsData = {}
+
+    optionsData[#optionsData + 1] = {
+        type = "checkbox",
+        name = "Allow sending while marked as offline",
+        getFunc = function() return saveData:GetSendDataWhileInvisible() end,
+        setFunc = function(value) saveData:SetSendDataWhileInvisible(value) end,
+    }
 
     local handlers = handlerManager:GetHandlers()
     for i = 1, #handlers do
@@ -87,7 +94,7 @@ local function CreateOptionsData(handlerManager, protocolManager)
     return optionsData
 end
 
-function internal:InitializeSettingsPanel()
+function internal:InitializeSettingsPanel(saveData)
     local LAM = LibAddonMenu2
     local DONATION_URL = "https://www.esoui.com/downloads/info1337-LibGroupBroadcast.html#donate"
     local panelData = {
@@ -104,7 +111,7 @@ function internal:InitializeSettingsPanel()
     local panel = LAM:RegisterAddonPanel("LibGroupBroadcastOptions", panelData)
     CALLBACK_MANAGER:RegisterCallback("LAM-BeforePanelControlsCreated", function(currentPanel)
         if currentPanel == panel then
-            local optionsData = CreateOptionsData(self.handlerManager, self.protocolManager)
+            local optionsData = CreateOptionsData(saveData, self.handlerManager, self.protocolManager)
             LAM:RegisterOptionControls("LibGroupBroadcastOptions", optionsData)
         end
     end)

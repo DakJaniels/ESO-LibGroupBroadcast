@@ -243,5 +243,50 @@ Taneth("LibGroupBroadcast", function()
             assert.is_true(protocol:IsEnabled())
             assert.is_true(protocol:Send({ test = 1 }))
         end)
+
+        it.async("should clear queued messages when in offline mode", function(done)
+            local internal = LGB.SetupMockInstance()
+            local manager = internal.broadcastManager
+
+            ZO_PreHook(manager.protocolManager, "ClearQueuedMessages", function()
+                done()
+            end)
+
+            local outgoingData = { text = string.rep("a", 255) }
+            local handler = internal.handlerManager:RegisterHandler("test")
+            local protocol = handler:DeclareProtocol(0, "test")
+            assert.is_not_nil(protocol)
+            protocol:AddField(StringField:New("text"))
+            protocol:OnData(function()
+                assert.fail("Should not receive data when in offline mode.")
+            end)
+            protocol:Finalize()
+
+            assert.is_true(protocol:Send(outgoingData))
+            internal.gameApiWrapper:SetInOfflineMode(true)
+        end)
+
+        it.async("should not clear queued messages when in offline mode and sending is allowed", function(done)
+            local internal = LGB.SetupMockInstance()
+            local manager = internal.broadcastManager
+            internal.saveData:SetSendDataWhileInvisible(true)
+
+            ZO_PreHook(manager.protocolManager, "ClearQueuedMessages", function()
+                assert.fail("Should not clear queued data when in offline mode.")
+            end)
+
+            local outgoingData = { text = string.rep("a", 255) }
+            local handler = internal.handlerManager:RegisterHandler("test")
+            local protocol = handler:DeclareProtocol(0, "test")
+            assert.is_not_nil(protocol)
+            protocol:AddField(StringField:New("text"))
+            protocol:OnData(function()
+                done()
+            end)
+            protocol:Finalize()
+
+            assert.is_true(protocol:Send(outgoingData))
+            internal.gameApiWrapper:SetInOfflineMode(true)
+        end)
     end)
 end)
