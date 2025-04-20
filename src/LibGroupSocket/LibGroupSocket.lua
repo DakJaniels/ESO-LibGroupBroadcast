@@ -456,37 +456,6 @@ function lib:GetHandler(messageType)
     return handlers[messageType]
 end
 
-
----------------------------------------------------- Data Handlers ----------------------------------------------------
-
-lib.MESSAGE_TYPE_RESERVED = 0    --- reserved in case we ever have more than 31 message types. can also be used for local tests
-lib.MESSAGE_TYPE_RESOURCES = 1   --- for exchanging stamina and magicka values
-lib.MESSAGE_TYPE_COMBATSTATS = 2 --- for combat stats like heal, damage and time in combat
-
---- Registers a handler module for a specific data type.
---- This module will keep everything related to data handling out of any single addon,
---- in order to let multiple addons use the same messageType.
---- messageType - The messageType the handler will take care of
---- handlerVersion - The loaded handler version. Works like the minor version in LibStub and prevents older instances from overwriting a newer one
---- returns the handler object and saveData for the messageType
-function lib:RegisterHandler(messageType, handlerVersion)
-    if handlers[messageType] and handlers[messageType].version >= handlerVersion then
-        return false
-    else
-        handlers[messageType] = handlers[messageType] or {}
-        handlers[messageType].version = handlerVersion
-        saveData.handlers[messageType] = saveData.handlers[messageType] or {}
-        return handlers[messageType], saveData.handlers[messageType]
-    end
-end
-
---- Gives access to an already registered handler for addons.
---- messageType - The messageType of the handler
---- returns the handler object
-function lib:GetHandler(messageType)
-    return handlers[messageType]
-end
-
 --------------------------------------------------------- Misc --------------------------------------------------------
 
 --- Register for unprocessed data of a messageType
