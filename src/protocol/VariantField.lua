@@ -147,6 +147,13 @@ end
 function VariantField:Serialize(data, input)
     local value = self:GetValueOrDefault(input)
     if value == TOO_MANY_VARIANTS_SET then
+        local count = 0
+        for i = 1, #self.variants do
+            local variant = self.variants[i]
+            if input[variant.label] ~= nil then
+                count = count + 1
+            end
+        end
         logger:Warn("Expected at most one variant to be set for field %s, but found %d", self.label, count)
         return false
     end
