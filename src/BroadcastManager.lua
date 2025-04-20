@@ -41,6 +41,8 @@ end
 function BroadcastManager:RequestSendData()
     if self.sendHandle or not self.saveData then return end
 
+    if not self.gameApiWrapper:IsGrouped() then return end
+
     self.protocolManager:RemoveDisabledMessages()
     local inCombat = self.gameApiWrapper:IsInCombat()
     local hasCombatRelevantMessages = self.protocolManager:HasRelevantMessages(true)
