@@ -137,4 +137,5 @@ function GroupResourceManager:GetLastUpdateTime(unitTag)
     if not entry or not entry.lastUpdate then
         return -1
     end
+    return entry.lastUpdate
 end
