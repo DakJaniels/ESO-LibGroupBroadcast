@@ -86,6 +86,7 @@ function GroupResourceManager:OnGroupResourceChanged(unitTag, percentage, maximu
 end
 
 function GroupResourceManager:OnPlayerResourceChanged(powerValue, powerMax)
+    powerMax = math.max(powerMax, 1)
     local percentage = powerValue / powerMax
     local _, cachedMaximum, cachedPercentage = self:GetValues("player")
 
