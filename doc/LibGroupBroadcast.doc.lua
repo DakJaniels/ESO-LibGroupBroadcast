@@ -768,6 +768,8 @@ function GameApiWrapper:IsInCombat() end
 
 function GameApiWrapper:IsGrouped() end
 
+function GameApiWrapper:IsInOfflineMode() end
+
 function GameApiWrapper:BroadcastData(buffer) end
 
 function GameApiWrapper:OnDataReceived(unitTag, ...) end
@@ -793,6 +795,10 @@ function MockGameApiWrapper:IsGrouped() end
 
 function MockGameApiWrapper:SetGrouped(inGroup) end
 
+function MockGameApiWrapper:IsInOfflineMode() end
+
+function MockGameApiWrapper:SetInOfflineMode(isInOfflineMode) end
+
 function MockGameApiWrapper:BroadcastData(buffer) end
 
 function MockGameApiWrapper:SetUnitTag(unitTag) end
@@ -804,7 +810,7 @@ local MessageQueue = ZO_InitializingObject:Subclass()
 
 function MessageQueue:Initialize() end
 
-function MessageQueue:Clear() end
+function MessageQueue:Clear(reason) end
 
 --- @param message DataMessageBase
 function MessageQueue:EnqueueMessage(message) end
@@ -859,7 +865,7 @@ function ProtocolManager:IsProtocolEnabled(protocolId) end
 
 function ProtocolManager:SetProtocolEnabled(protocolId, enabled) end
 
-function ProtocolManager:ClearQueuedMessages() end
+function ProtocolManager:ClearQueuedMessages(reason) end
 
 function ProtocolManager:DeclareCustomEvent(handlerData, eventId, eventName, options) end
 
@@ -897,7 +903,7 @@ function BroadcastManager:RequestSendData() end
 
 function BroadcastManager:FillSendBuffer(inCombat) end
 
-function BroadcastManager:ClearMessages() end
+function BroadcastManager:ClearMessages(reason) end
 
 function BroadcastManager:SendData() end
 

@@ -20,6 +20,7 @@ function MockGameApiWrapper:Initialize(callbackManager)
     self.lastSendTime = 0
     self.inCombat = false
     self.inGroup = true
+    self.isInOfflineMode = false
     self.unitTag = "player"
 end
 
@@ -50,6 +51,14 @@ end
 
 function MockGameApiWrapper:SetGrouped(inGroup)
     self.inGroup = inGroup
+end
+
+function MockGameApiWrapper:IsInOfflineMode()
+    return self.isInOfflineMode
+end
+
+function MockGameApiWrapper:SetInOfflineMode(isInOfflineMode)
+    self.isInOfflineMode = isInOfflineMode
 end
 
 function MockGameApiWrapper:BroadcastData(buffer)
