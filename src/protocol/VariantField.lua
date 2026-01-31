@@ -147,7 +147,7 @@ end
 function VariantField:Serialize(data, input)
     local value = self:GetValueOrDefault(input)
     if value == TOO_MANY_VARIANTS_SET then
-        logger:Warn("Expected at most one variant to be set for field %s, but found %d", self.label, count)
+        logger:Warn("Expected at most one variant to be set for field %s, but found %d", self.label)
         return false
     end
 
