@@ -5,7 +5,7 @@
 --- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
 
---[[ doc.lua begin ]]--
+--[[ doc.lua begin ]] --
 
 --- @class BinaryBuffer
 --- @field protected bytes table<number> The bytes of the buffer.
@@ -258,10 +258,10 @@ end
 --- @param ... number The values to create the buffer from. Must match the specified number of bits.
 --- @return BinaryBuffer value The new buffer.
 function BinaryBuffer.FromUInt32Values(numBits, ...)
-    local result = BinaryBuffer:New(numBits)
     local length = math.ceil(numBits / 32)
-    local numBytes = result:GetByteLength()
     assert(select("#", ...) == length, "Incorrect number of values")
+
+    local result = BinaryBuffer:New(numBits)
     for i = 1, length do
         local value = select(i, ...)
         local offset = (i - 1) * 4
@@ -271,14 +271,16 @@ function BinaryBuffer.FromUInt32Values(numBits, ...)
         result.bytes[offset + 4] = BitAnd(value, 0xFF)
     end
 
+    -- clean up surplus bytes
+    local numBytes = result:GetByteLength()
     for i = numBytes + 1, #result.bytes do
         result.bytes[i] = nil
     end
-    if numBits % 8 > 0 then
+
+    if numBits % 8 > 0 then -- surplus bits too
         local mask = BitLShift(1, numBits % 8) - 1
         result.bytes[numBytes] = BitAnd(result.bytes[numBytes], mask)
     end
 
-    result.bitLength = numBits
     return result
 end
