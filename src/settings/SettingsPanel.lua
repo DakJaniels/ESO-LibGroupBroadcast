@@ -4,13 +4,6 @@ local internal = LibGroupBroadcast.internal
 local function CreateOptionsData(saveData, handlerManager, protocolManager)
     local optionsData = {}
 
-    optionsData[#optionsData + 1] = {
-        type = "checkbox",
-        name = "Allow sending while marked as offline",
-        getFunc = function() return saveData:GetSendDataWhileInvisible() end,
-        setFunc = function(value) saveData:SetSendDataWhileInvisible(value) end,
-    }
-
     local handlers = handlerManager:GetHandlers()
     for i = 1, #handlers do
         local handlerData = handlers[i]

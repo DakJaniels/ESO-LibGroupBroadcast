@@ -122,9 +122,6 @@ function BroadcastManager:SendData()
     elseif not self.gameApiWrapper:IsGrouped() then
         self:ClearMessages("not grouped")
         return
-    elseif not self.saveData:GetSendDataWhileInvisible() and self.gameApiWrapper:IsInOfflineMode() then
-        self:ClearMessages("offline")
-        return
     end
 
     self.protocolManager:RemoveDisabledMessages()
