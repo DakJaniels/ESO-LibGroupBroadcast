@@ -29,7 +29,7 @@ function FrameHandler:Initialize()
     self.extraControlMessages = {}
     self.fixedMessages = {}
     self.flexMessages = {}
-    self.unfinishedFlexMessagesById = {}
+    self.unfinishedFlexMessages = {}
     self.data = BinaryBuffer:New(MAX_BROADCAST_MESSAGE_BYTES * 8)
     self.bytesFree = MAX_BROADCAST_MESSAGE_BYTES - HEADER_BYTES
 end
@@ -44,7 +44,7 @@ function FrameHandler:Reset()
 end
 
 function FrameHandler:ClearUnfinishedMessages()
-    ZO_ClearTable(self.unfinishedFlexMessagesById)
+    ZO_ClearTable(self.unfinishedFlexMessages)
 end
 
 function FrameHandler:GetBytesFree()
@@ -142,7 +142,7 @@ function FrameHandler:Serialize()
     return self.data
 end
 
-function FrameHandler:Deserialize(buffer)
+function FrameHandler:Deserialize(senderTag, buffer)
     local controlMessages = {}
     local dataMessages = {}
 
@@ -193,30 +193,45 @@ function FrameHandler:Deserialize(buffer)
         dataMessages[#dataMessages + 1] = FixedSizeDataMessage.Deserialize(buffer)
     end
 
-    local unfinishedFlexMessagesById = self.unfinishedFlexMessagesById
+    local senderUnfinishedFlexMessagesById
     for _ = 1, flexMessageCount do
         local message = FlexSizeDataMessage.Deserialize(buffer)
         local id = message:GetId()
         if message:IsContinuation() then
-            local unfinishedMessage = unfinishedFlexMessagesById[id]
+            if not senderUnfinishedFlexMessagesById then
+                senderUnfinishedFlexMessagesById = self:ResolveSenderUnfinishedFlexMessages(senderTag)
+            end
+            local unfinishedMessage = senderUnfinishedFlexMessagesById[id]
             if unfinishedMessage then
                 if unfinishedMessage:CanAppendMessage(message) then
                     unfinishedMessage:AppendMessage(message)
                     if not unfinishedMessage:HasContinuation() then
                         unfinishedMessage:Finalize()
                         dataMessages[#dataMessages + 1] = unfinishedMessage
-                        unfinishedFlexMessagesById[id] = nil
+                        senderUnfinishedFlexMessagesById[id] = nil
                     end
                 else
-                    unfinishedFlexMessagesById[id] = nil
+                    senderUnfinishedFlexMessagesById[id] = nil
                 end
             end
         elseif message:HasContinuation() then
-            unfinishedFlexMessagesById[id] = message
+            if not senderUnfinishedFlexMessagesById then
+                senderUnfinishedFlexMessagesById = self:ResolveSenderUnfinishedFlexMessages(senderTag)
+            end
+            senderUnfinishedFlexMessagesById[id] = message
         else
             dataMessages[#dataMessages + 1] = message
         end
     end
 
     return controlMessages, dataMessages
+end
+
+function FrameHandler:ResolveSenderUnfinishedFlexMessages(senderTag)
+    local displayName = GetUnitDisplayName(senderTag)
+    local senderKey = (displayName and displayName ~= "") and displayName or senderTag
+    if not self.unfinishedFlexMessages[senderKey] then
+        self.unfinishedFlexMessages[senderKey] = {}
+    end
+    return self.unfinishedFlexMessages[senderKey]
 end

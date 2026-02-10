@@ -25,7 +25,7 @@ Taneth("LibGroupBroadcast", function()
             assert.equals(
                 "3C 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
                 serialized:ToHexString())
-            local controlMessages, dataMessages = handler:Deserialize(serialized)
+            local controlMessages, dataMessages = handler:Deserialize("group3", serialized)
             assert.equals(0, #controlMessages)
             assert.equals(0, #dataMessages)
         end)
@@ -54,7 +54,7 @@ Taneth("LibGroupBroadcast", function()
             "2B 00 0E 4C 5B 6A 79 88 97 A6 B5 C4 D3 E2 F1 00 1F 1F 2E 3D 00 00 00 00 00 00 00 00 00 00 00 00"
             local handler = FrameHandler:New()
             local serialized = BinaryBuffer.FromHexString(input)
-            local controlMessages, dataMessages = handler:Deserialize(serialized)
+            local controlMessages, dataMessages = handler:Deserialize("group3", serialized)
             assert.equals(17, #controlMessages)
             assert.equals(0, #dataMessages)
             for i = 1, 17 do
@@ -88,7 +88,7 @@ Taneth("LibGroupBroadcast", function()
             "28 F0 FF FF FF 7E FE FD FE 7C FD FB FD 7A FC F9 FC 78 FB F7 FB 76 FA F5 FA 74 F9 F3 F9 72 F8 F1"
             local handler = FrameHandler:New()
             local serialized = BinaryBuffer.FromHexString(input)
-            local controlMessages, dataMessages = handler:Deserialize(serialized)
+            local controlMessages, dataMessages = handler:Deserialize("group3", serialized)
             assert.equals(0, #controlMessages)
             assert.equals(15, #dataMessages)
             for i = 1, 15 do
@@ -123,7 +123,7 @@ Taneth("LibGroupBroadcast", function()
             "20 0A FF 80 FF FF 00 FE FE 80 FD FE 00 FC FD 80 FB FD 00 FA FC 80 F9 FC 00 F8 FB 80 F7 FB 00 F6"
             local handler = FrameHandler:New()
             local serialized = BinaryBuffer.FromHexString(input)
-            local controlMessages, dataMessages = handler:Deserialize(serialized)
+            local controlMessages, dataMessages = handler:Deserialize("group3", serialized)
             assert.equals(0, #controlMessages)
             assert.equals(10, #dataMessages)
             for i = 1, 10 do
@@ -186,17 +186,17 @@ Taneth("LibGroupBroadcast", function()
             local handler = FrameHandler:New()
 
             local serialized1 = BinaryBuffer.FromHexString(input1)
-            local controlMessages, dataMessages = handler:Deserialize(serialized1)
+            local controlMessages, dataMessages = handler:Deserialize("group3", serialized1)
             assert.equals(0, #controlMessages)
             assert.equals(0, #dataMessages)
 
             local serialized2 = BinaryBuffer.FromHexString(input2)
-            controlMessages, dataMessages = handler:Deserialize(serialized2)
+            controlMessages, dataMessages = handler:Deserialize("group3", serialized2)
             assert.equals(0, #controlMessages)
             assert.equals(0, #dataMessages)
 
             local serialized3 = BinaryBuffer.FromHexString(input3)
-            controlMessages, dataMessages = handler:Deserialize(serialized3)
+            controlMessages, dataMessages = handler:Deserialize("group3", serialized3)
             assert.equals(0, #controlMessages)
             assert.equals(1, #dataMessages)
             assert.is_true(ZO_Object.IsInstanceOf(dataMessages[1], FlexSizeDataMessage))
