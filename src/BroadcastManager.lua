@@ -153,7 +153,7 @@ function BroadcastManager:OnDataReceived(unitTag, data)
         return
     end
 
-    local controlMessages, dataMessages = frameHandler:Deserialize(data)
+    local controlMessages, dataMessages = frameHandler:Deserialize(unitTag, data)
     controlMessages = self.protocolManager:HandleCustomEventMessages(unitTag, controlMessages)
     if #controlMessages > 0 then
         local unknownIds = {}

@@ -5,7 +5,10 @@
 if not Taneth then return end
 --- @class LibGroupBroadcast
 local LGB = LibGroupBroadcast
+local BinaryBuffer = LGB.internal.class.BinaryBuffer
 local BroadcastManager = LGB.internal.class.BroadcastManager
+local FrameHandler = LGB.internal.class.FrameHandler
+local FlexSizeDataMessage = LGB.internal.class.FlexSizeDataMessage
 local StringField = LGB.internal.class.StringField
 local ArrayField = LGB.internal.class.ArrayField
 local TableField = LGB.internal.class.TableField
@@ -242,6 +245,62 @@ Taneth("LibGroupBroadcast", function()
 
             assert.is_true(protocol:IsEnabled())
             assert.is_true(protocol:Send({ test = 1 }))
+        end)
+
+        it("should independently reassemble multi-frame messages from different senders", function()
+            local internal = LGB.SetupMockInstance()
+
+            local handler = internal.handlerManager:RegisterHandler("test")
+            local protocol = handler:DeclareProtocol(0, "test")
+            protocol:AddField(StringField:New("text"))
+
+            local received = {}
+            protocol:OnData(function(unitTag, data)
+                received[#received + 1] = { unitTag = unitTag, text = data.text }
+            end)
+            protocol:Finalize()
+
+            -- Construct frames the way a real sender would
+            local function makeFrames(text)
+                local field = StringField:New("text")
+                local data = BinaryBuffer:New(7)
+                field:Serialize(data, { text = text })
+                local message = FlexSizeDataMessage:New(0, data)
+
+                local frames = {}
+                local fh = FrameHandler:New()
+                while not message:IsFullySent() do
+                    assert.is_true(fh:AddFlexSizeDataMessage(message))
+                    frames[#frames + 1] = fh:Serialize():ToUInt32Array()
+                    fh:Reset()
+                end
+                return frames
+            end
+
+            local textA = string.rep("a", 100)
+            local textB = string.rep("b", 100)
+            local framesA = makeFrames(textA)
+            local framesB = makeFrames(textB)
+
+            assert.is_true(#framesA > 1)
+            assert.is_true(#framesB > 1)
+
+            local gaw = internal.gameApiWrapper
+            local maxFrames = math.max(#framesA, #framesB)
+            for i = 1, maxFrames do
+                if framesA[i] then
+                    gaw:OnDataReceived("group1", unpack(framesA[i]))
+                end
+                if framesB[i] then
+                    gaw:OnDataReceived("group2", unpack(framesB[i]))
+                end
+            end
+
+            assert.equals(2, #received)
+            assert.equals("group1", received[1].unitTag)
+            assert.equals(textA, received[1].text)
+            assert.equals("group2", received[2].unitTag)
+            assert.equals(textB, received[2].text)
         end)
     end)
 end)
